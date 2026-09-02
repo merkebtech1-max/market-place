@@ -103,12 +103,7 @@ export function Header() {
 
         <LocationIndicator />
 
-        <div className="hidden min-w-0 flex-1 items-center gap-2 md:flex">
-          <SearchInput className="min-w-0 flex-1 lg:max-w-sm" />
-          <ButtonLink href="/#categories" variant="outline" size="sm" className="shrink-0">
-            {t("home.categoriesTitle")}
-          </ButtonLink>
-        </div>
+        <SearchInput hidePlaceholder className="hidden flex-1 md:flex md:max-w-65 lg:max-w-sm" />
 
         <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-1.5">
           <LanguageSwitcher className="hidden sm:flex" />
@@ -131,11 +126,8 @@ export function Header() {
         </div>
       </div>
 
-      <div className="flex items-center gap-2 border-t border-border px-4 py-1.5 md:hidden">
-        <SearchInput className="min-w-0 flex-1" />
-        <ButtonLink href="/#categories" variant="outline" size="md" className="shrink-0 px-2.5">
-          {t("home.categoriesTitle")}
-        </ButtonLink>
+      <div className="border-t border-border px-4 py-1.5 md:hidden">
+        <SearchInput hidePlaceholder />
       </div>
     </header>
   );

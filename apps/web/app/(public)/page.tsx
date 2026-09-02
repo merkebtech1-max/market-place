@@ -4,6 +4,7 @@ import { ButtonLink } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { CategoryRail } from "@/features/catalog/components/CategoryCard";
 import { ListingCard } from "@/features/listings/components/ListingsCard";
+import { SearchInput } from "@/features/search/components/SearchInput";
 import { T } from "@/il8n/T";
 import { categories, listings } from "@/lib/mock-data";
 
@@ -36,9 +37,13 @@ export default function HomePage() {
           <p className="max-w-md text-sm text-ink-muted sm:text-base">
             <T k="home.heroSubtitle" />
           </p>
+          <SearchInput className="w-full max-w-xl" />
           <div className="flex flex-wrap items-center justify-center gap-2">
             <ButtonLink href="/sell" size="lg">
               <T k="header.sellItem" />
+            </ButtonLink>
+            <ButtonLink href="/search" variant="outline" size="lg">
+              <T k="nav.search" />
             </ButtonLink>
           </div>
         </Container>
@@ -67,7 +72,7 @@ export default function HomePage() {
         )}
 
         {/* Categories */}
-        <section id="categories" aria-labelledby="categories-heading" className="scroll-mt-28">
+        <section aria-labelledby="categories-heading">
           <h2 id="categories-heading" className="mb-3 text-lg font-semibold text-ink">
             <T k="home.categoriesTitle" />
           </h2>
