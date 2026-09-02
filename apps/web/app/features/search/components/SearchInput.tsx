@@ -7,8 +7,8 @@ import { useTranslations } from "@/il8n/LanguageProvider";
 import { cn } from "@/lib/utils";
 
 /**
- * The single search entry point (SRS §3.3 FR-D1) — reused in the Header and
- * the Home hero. Deliberately does not read useSearchParams: it always
+ * The single search entry point (SRS §3.3 FR-D1), displayed in the Header.
+ * Deliberately does not read useSearchParams: it always
  * starts a fresh query, so it never forces the pages that host it (every
  * route, via the Header) out of static rendering.
  */
