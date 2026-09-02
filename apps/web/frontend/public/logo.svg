@@ -1,0 +1,5 @@
+<svg width="72" height="72" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Merkeb Market">
+  <rect width="72" height="72" rx="18" fill="#3730A3"/>
+  <path d="M16 50V24.5C16 23.12 17.12 22 18.5 22C19.32 22 20.09 22.4 20.56 23.08L28 33.7L35.44 23.08C35.91 22.4 36.68 22 37.5 22C38.88 22 40 23.12 40 24.5V50H33.5V34.9L28 42.6L22.5 34.9V50H16Z" fill="#FFFFFF"/>
+  <path d="M46 50V22H52V44.2H58V50H46Z" fill="#818CF8"/>
+</svg>

@@ -16,6 +16,30 @@ trust through verified accounts and reviews.
 - Docker Compose
 - pnpm workspaces
 
+## Repository structure
+
+```text
+apps/
+  web/       Next.js frontend
+  api/       NestJS backend
+packages/
+  shared/    Code intentionally shared between applications
+```
+
+This repository is managed as a pnpm workspace. Application code must be
+created in the agreed paths so shared tooling can discover it consistently.
+
+## Team workflow
+
+Create a short-lived branch from the latest `main` for each task. Open a pull
+request and have another team member review it before merging it into `main`.
+
+Examples:
+
+- `feat/web-foundation`
+- `feat/api-foundation`
+- `feat/dev-infrastructure`
+
 ## Project status
 
-Early development — private MVP.
+Early MVP development.

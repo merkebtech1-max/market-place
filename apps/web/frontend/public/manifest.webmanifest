@@ -1,0 +1,11 @@
+{
+  "name": "Merkeb Market",
+  "short_name": "Merkeb Market",
+  "description": "Buy and sell second-hand goods in your Ethiopian community.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fbfaf7",
+  "theme_color": "#3730a3",
+  "lang": "am",
+  "icons": []
+}
