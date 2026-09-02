@@ -14,7 +14,7 @@ trust through verified accounts and reviews.
 - PostgreSQL and Prisma
 - Redis
 - Docker Compose
-- pnpm workspaces
+- npm workspaces
 
 ## Repository structure
 
@@ -26,8 +26,14 @@ packages/
   shared/    Code intentionally shared between applications
 ```
 
-This repository is managed as a pnpm workspace. Application code must be
+This repository is managed with npm workspaces. Application code must be
 created in the agreed paths so shared tooling can discover it consistently.
+
+Install all workspace dependencies from the repository root with:
+
+```bash
+npm install
+```
 
 ## Team workflow
 
