@@ -1,0 +1,638 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "esm"
+}
+
+datasource db {
+  provider = "postgresql"
+  // url is supplied via prisma.config.ts, not here
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum UserRole {
+  USER
+  MODERATOR
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum LocationType {
+  REGION
+  CITY
+  SUBCITY
+}
+
+enum ListingStatus {
+  DRAFT
+  PENDING_REVIEW
+  ACTIVE
+  RESERVED
+  SOLD
+  EXPIRED
+  REMOVED
+}
+
+enum ListingCondition {
+  NEW
+  LIKE_NEW
+  GOOD
+  FAIR
+  POOR
+}
+
+enum MessageType {
+  TEXT
+  SYSTEM
+}
+
+// No separate EXPIRED status — auto-timeout closes the same way a
+// QR scan does (status -> COMPLETED). completionMethod is the only
+// place that distinguishes how it closed.
+enum ReservationStatus {
+  RESERVED
+  COMPLETED
+  CANCELLED
+  DISPUTED
+  REFUNDED
+}
+
+enum CompletionMethod {
+  QR_SCAN
+  AUTO_EXPIRY
+}
+
+enum PaymentProvider {
+  CHAPA
+  TELEBIRR
+}
+
+enum PaymentStatus {
+  PENDING
+  VERIFIED
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum RefundStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum DisputeStatus {
+  OPEN
+  UNDER_REVIEW
+  RESOLVED
+  REJECTED
+}
+
+enum DisputeResolution {
+  REFUND_BUYER
+  RELEASE_TO_SELLER
+  SPLIT
+  NO_ACTION
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWING
+  RESOLVED
+  DISMISSED
+}
+
+enum ReportTargetType {
+  LISTING
+  USER
+  MESSAGE
+}
+
+// v1: ratings are one-directional — buyer rates seller only.
+enum RatingRole {
+  BUYER
+}
+
+enum ViolationPatternType {
+  PHONE_NUMBER
+  TELEGRAM
+  SOCIAL_MEDIA
+  EMAIL
+  EXTERNAL_CONTACT
+  OTHER
+}
+
+// ============================================================
+// USER / AUTHENTICATION
+// ============================================================
+
+model User {
+  id              String     @id @default(uuid())
+  phone           String     @unique
+  phoneVerifiedAt DateTime?
+  displayName     String
+  avatarKey       String?
+  cityId          String?
+  subcityId       String?
+  bio             String?
+  role            UserRole   @default(USER)
+  status          UserStatus @default(ACTIVE)
+
+  ratingAvg   Decimal @default(0) @db.Decimal(3, 2)
+  ratingCount Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  city    Location? @relation("UserCity", fields: [cityId], references: [id])
+  subcity Location? @relation("UserSubcity", fields: [subcityId], references: [id])
+
+  sessions      Session[]
+  listings      Listing[]
+  savedListings SavedListing[]
+
+  ratingsGiven    Rating[] @relation("RatingRater")
+  ratingsReceived Rating[] @relation("RatingRatee")
+
+  payments           Payment[]
+  buyerReservations  Reservation[] @relation("ReservationBuyer")
+  sellerReservations Reservation[] @relation("ReservationSeller")
+
+  blocksMade     Block[] @relation("Blocker")
+  blocksReceived Block[] @relation("Blocked")
+
+  contactViolations ContactInfoViolation[]
+
+  disputesRaised   Dispute[] @relation("DisputeRaisedBy")
+  disputesResolved Dispute[] @relation("DisputeResolvedBy")
+
+  refundsInitiated Refund[] @relation("RefundInitiatedBy")
+
+  reportsMade     Report[] @relation("ReportReporter")
+  reportsResolved Report[] @relation("ReportResolver")
+
+  auditLogs AuditLog[]
+
+  buyerThreads  Thread[] @relation("ThreadBuyer")
+  sellerThreads Thread[] @relation("ThreadSeller")
+
+  messages Message[]
+
+  @@index([status])
+  @@index([cityId])
+  @@index([subcityId])
+}
+
+model Session {
+  id               String    @id @default(uuid())
+  userId           String
+  refreshTokenHash String
+  userAgent        String?
+  ipHash           String?
+  expiresAt        DateTime
+  revokedAt        DateTime?
+  createdAt        DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model OtpRequest {
+  id         String    @id @default(uuid())
+  phone      String
+  codeHash   String
+  ipHash     String?
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([phone])
+  @@index([expiresAt])
+}
+
+model Block {
+  id        String   @id @default(uuid())
+  blockerId String
+  blockedId String
+  createdAt DateTime @default(now())
+
+  blocker User @relation("Blocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked User @relation("Blocked", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  @@unique([blockerId, blockedId])
+  @@index([blockedId])
+}
+
+// ============================================================
+// CATALOG / LOCATION
+// ============================================================
+
+model Category {
+  id              String   @id @default(uuid())
+  parentId        String?
+  slug            String   @unique
+  nameEn          String
+  nameAm          String
+  icon            String?
+  sort            Int      @default(0)
+  attributeSchema Json?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  parent   Category?  @relation("CategoryTree", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryTree")
+
+  listings Listing[]
+
+  @@index([parentId])
+  @@index([isActive])
+}
+
+model Location {
+  id       String       @id @default(uuid())
+  parentId String?
+  type     LocationType
+  nameEn   String
+  nameAm   String
+
+  parent   Location?  @relation("LocationTree", fields: [parentId], references: [id])
+  children Location[] @relation("LocationTree")
+
+  usersCity    User[] @relation("UserCity")
+  usersSubcity User[] @relation("UserSubcity")
+
+  listingsCity    Listing[] @relation("ListingCity")
+  listingsSubcity Listing[] @relation("ListingSubcity")
+
+  @@index([parentId])
+  @@index([type])
+}
+
+// ============================================================
+// LISTINGS
+// ============================================================
+
+model Listing {
+  id           String           @id @default(uuid())
+  sellerId     String
+  categoryId   String
+  title        String
+  description  String
+  condition    ListingCondition
+  priceCents   Int
+  isNegotiable Boolean          @default(false)
+  attributes   Json?
+
+  cityId    String
+  subcityId String? // optional — city is the mandatory granularity, subcity may be unknown
+  landmark  String?
+
+  status ListingStatus @default(DRAFT)
+
+  publishedAt DateTime?
+  expiresAt   DateTime?
+
+  viewCount Int @default(0)
+  saveCount Int @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  seller   User     @relation(fields: [sellerId], references: [id])
+  category Category @relation(fields: [categoryId], references: [id])
+
+  city    Location  @relation("ListingCity", fields: [cityId], references: [id])
+  subcity Location? @relation("ListingSubcity", fields: [subcityId], references: [id])
+
+  images       ListingImage[]
+  savedBy      SavedListing[]
+  threads      Thread[]
+  payments     Payment[]
+  reservations Reservation[]
+
+  ratings Rating[]
+  reports Report[]
+
+  @@index([sellerId])
+  @@index([cityId])
+  @@index([priceCents])
+  @@index([status, subcityId, categoryId, publishedAt])
+}
+
+model ListingImage {
+  id         String  @id @default(uuid())
+  listingId  String
+  storageKey String
+  width      Int?
+  height     Int?
+  blurhash   String?
+  phash      String?
+  position   Int     @default(0)
+
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([listingId])
+}
+
+model SavedListing {
+  userId    String
+  listingId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@id([userId, listingId])
+  @@index([listingId])
+}
+
+// ============================================================
+// MESSAGING
+// ============================================================
+
+model Thread {
+  id        String @id @default(uuid())
+  listingId String
+  buyerId   String
+  sellerId  String
+
+  unlockedAt    DateTime?
+  lastMessageAt DateTime?
+  createdAt     DateTime  @default(now())
+
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  buyer   User    @relation("ThreadBuyer", fields: [buyerId], references: [id])
+  seller  User    @relation("ThreadSeller", fields: [sellerId], references: [id])
+
+  messages    Message[]
+  // A Payment attempt is tied to its thread before any Reservation
+  // exists, so the webhook handler can unlock the right thread on
+  // verification without needing reservationId to be set yet.
+  payments    Payment[]
+  reservation Reservation?
+
+  @@unique([listingId, buyerId])
+  @@index([buyerId])
+  @@index([sellerId])
+  @@index([lastMessageAt])
+}
+
+model Message {
+  id           String      @id @default(uuid())
+  threadId     String
+  senderId     String
+  body         String
+  originalBody String?
+  type         MessageType @default(TEXT)
+  wasRedacted  Boolean     @default(false)
+  readAt       DateTime?
+  createdAt    DateTime    @default(now())
+
+  thread Thread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  sender User   @relation(fields: [senderId], references: [id])
+
+  contactViolations ContactInfoViolation[]
+
+  @@index([threadId, createdAt])
+}
+
+model ContactInfoViolation {
+  id          String               @id @default(uuid())
+  userId      String
+  threadId    String
+  messageId   String
+  patternType ViolationPatternType
+  matchedText String?
+  createdAt   DateTime             @default(now())
+
+  user    User    @relation(fields: [userId], references: [id])
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([threadId])
+  @@index([messageId])
+}
+
+// ============================================================
+// TRANSACTIONS
+// ============================================================
+
+model CommissionTier {
+  id            String   @id @default(uuid())
+  minPriceCents Int
+  maxPriceCents Int?
+  percentageBps Int
+  minFeeCents   Int?
+  maxFeeCents   Int?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+
+  reservations Reservation[]
+
+  @@index([isActive])
+}
+
+model Payment {
+  id            String  @id @default(uuid())
+  buyerId       String
+  listingId     String
+  threadId      String
+  reservationId String? @unique
+
+  provider    PaymentProvider
+  providerRef String          @unique
+
+  rawPayload Json?
+
+  amountCents      Int
+  providerFeeCents Int @default(0)
+
+  status    PaymentStatus @default(PENDING)
+  paidAt    DateTime?
+  createdAt DateTime      @default(now())
+
+  buyer       User         @relation(fields: [buyerId], references: [id])
+  listing     Listing      @relation(fields: [listingId], references: [id])
+  thread      Thread       @relation(fields: [threadId], references: [id])
+  reservation Reservation? @relation(fields: [reservationId], references: [id])
+
+  refund Refund?
+
+  @@index([buyerId])
+  @@index([listingId])
+  @@index([threadId])
+  @@index([status])
+}
+
+model Reservation {
+  id        String @id @default(uuid())
+  listingId String
+  threadId  String @unique
+
+  buyerId  String
+  sellerId String
+
+  commissionTierId String
+  commissionCents  Int
+
+  status ReservationStatus @default(RESERVED)
+
+  qrTokenHash  String?   @unique
+  qrConsumedAt DateTime?
+
+  expiresAt DateTime // hold-window deadline; required — expiry sweep depends on it
+
+  completedAt      DateTime?
+  completionMethod CompletionMethod? // set once status -> COMPLETED, either path
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  listing Listing @relation(fields: [listingId], references: [id])
+  thread  Thread  @relation(fields: [threadId], references: [id])
+  buyer   User    @relation("ReservationBuyer", fields: [buyerId], references: [id])
+  seller  User    @relation("ReservationSeller", fields: [sellerId], references: [id])
+
+  commissionTier CommissionTier @relation(fields: [commissionTierId], references: [id])
+
+  payment Payment?
+  dispute Dispute?
+
+  @@index([listingId])
+  @@index([buyerId])
+  @@index([sellerId])
+  @@index([status])
+  @@index([expiresAt])
+}
+
+// ============================================================
+// REFUNDS / DISPUTES / MODERATION
+// ============================================================
+
+// Refund relates only to Payment, not directly to Reservation —
+// reach it via reservation.payment.refund when needed.
+model Refund {
+  id                  String @id @default(uuid())
+  paymentId           String @unique
+  amountRefundedCents Int
+  feeRetainedCents    Int    @default(0)
+
+  reason        String
+  initiatedById String
+
+  status      RefundStatus @default(PENDING)
+  providerRef String?      @unique
+
+  createdAt   DateTime  @default(now())
+  processedAt DateTime?
+
+  payment     Payment @relation(fields: [paymentId], references: [id])
+  initiatedBy User    @relation("RefundInitiatedBy", fields: [initiatedById], references: [id])
+
+  @@index([status])
+}
+
+model Dispute {
+  id            String @id @default(uuid())
+  reservationId String @unique
+
+  raisedById String
+  reason     String
+  note       String?
+
+  status     DisputeStatus      @default(OPEN)
+  resolution DisputeResolution?
+
+  resolvedById String?
+  resolvedAt   DateTime?
+
+  createdAt DateTime @default(now())
+
+  reservation Reservation @relation(fields: [reservationId], references: [id])
+  raisedBy    User        @relation("DisputeRaisedBy", fields: [raisedById], references: [id])
+  resolvedBy  User?       @relation("DisputeResolvedBy", fields: [resolvedById], references: [id])
+
+  @@index([raisedById])
+  @@index([status])
+}
+
+// ============================================================
+// RATINGS
+// ============================================================
+
+model Rating {
+  id        String @id @default(uuid())
+  listingId String
+  raterId   String
+  rateeId   String
+
+  role    RatingRole @default(BUYER)
+  stars   Int
+  comment String?
+
+  createdAt DateTime @default(now())
+
+  listing Listing @relation(fields: [listingId], references: [id])
+  rater   User    @relation("RatingRater", fields: [raterId], references: [id])
+  ratee   User    @relation("RatingRatee", fields: [rateeId], references: [id])
+
+  @@unique([listingId, raterId])
+  @@index([rateeId])
+}
+
+// ============================================================
+// REPORTING / AUDITING
+// ============================================================
+
+model Report {
+  id         String           @id @default(uuid())
+  reporterId String
+  targetType ReportTargetType
+  targetId   String
+
+  listingId String?
+  reason    String
+  note      String?
+
+  status ReportStatus @default(PENDING)
+
+  resolvedById String?
+  resolution   String?
+
+  createdAt DateTime @default(now())
+
+  reporter User     @relation("ReportReporter", fields: [reporterId], references: [id])
+  listing  Listing? @relation(fields: [listingId], references: [id])
+  resolver User?    @relation("ReportResolver", fields: [resolvedById], references: [id])
+
+  @@index([reporterId])
+  @@index([targetType, targetId])
+  @@index([status])
+  @@index([listingId])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  actorId   String?
+  action    String
+  target    String
+  diff      Json?
+  createdAt DateTime @default(now())
+
+  actor User? @relation(fields: [actorId], references: [id])
+
+  @@index([actorId])
+  @@index([createdAt])
+}
