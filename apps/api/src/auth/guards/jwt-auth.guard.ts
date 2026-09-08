@@ -1,4 +1,4 @@
-import { Injectable, Logger, ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import { Logger, ExecutionContext, UnauthorizedException } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 
 /**
@@ -6,16 +6,8 @@ import { AuthGuard } from '@nestjs/passport';
  * Uses the 'jwt' strategy defined in JwtStrategy.
  * Attaches the validated payload (sub, phone, sessionId) to req.user.
  */
-@Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
   private readonly logger = new Logger(JwtAuthGuard.name);
-
-  canActivate(context: ExecutionContext) {
-    const request = context.switchToHttp().getRequest();
-    const path = request.url;
-    this.logger.log(`JWT authentication check for path=${path}`);
-    return super.canActivate(context);
-  }
 
   handleRequest(err: any, user: any, info: any, context: ExecutionContext) {
     const request = context.switchToHttp().getRequest();

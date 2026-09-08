@@ -40,7 +40,7 @@ export class JwtTokenService {
   }
 
   /** Hashes a refresh token with a random salt using scrypt */
-  hashRefreshToken(token: string): string {
+  private hashRefreshToken(token: string): string {
     const salt = randomBytes(16).toString('hex');
     const hash = scryptSync(token, salt, 64).toString('hex');
     return `${salt}:${hash}`;

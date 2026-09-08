@@ -43,7 +43,22 @@ export class AfroMessageOtpProvider implements OtpProvider {
       const response = await this.smsApi.sendSms({
         to,
         message,
-      });
+      }) as any;
+
+      // Check for nested error response structure - the API returns acknowledge: "success" at top level
+      // but may have nested errors in response.response.errors
+      const hasError = 
+        response?.response?.acknowledge === 'error' ||
+        (response?.response?.response?.errors && Array.isArray(response.response.response.errors) && response.response.response.errors.length > 0);
+
+      if (hasError) {
+        const errors = response.response.response?.errors || ['Unknown error'];
+        this.logger.error(
+          `[AFROMESSAGE OTP] Failed to send OTP to=${to} errors=${JSON.stringify(errors)}`,
+        );
+        throw new Error(`Failed to send OTP: ${errors.join(', ')}`);
+      }
+
       this.logger.log(
         `[AFROMESSAGE OTP] OTP sent successfully to=${to} response=${JSON.stringify(response)}`,
       );

@@ -23,6 +23,9 @@ export function hashIp(
 
   if (!ip) return undefined;
 
-  const pepper = process.env.IP_HASH_SECRET ?? '';
+  const pepper = process.env.IP_HASH_SECRET;
+  if (!pepper) {
+    throw new Error('IP_HASH_SECRET environment variable is required for IP hashing');
+  }
   return createHmac('sha256', pepper).update(ip).digest('hex');
 }

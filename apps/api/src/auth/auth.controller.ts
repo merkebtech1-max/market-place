@@ -1,4 +1,5 @@
 import { Body, Controller, Headers, Logger, Post, UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service.js';
 import { OtpService } from './otp/otp.service.js';
 import { RequestOtpDto } from './otp/dto/request-otp.dto.js';
@@ -6,9 +7,8 @@ import { LoginDto } from './dto/login.dto.js';
 import { RegisterDto } from './dto/register.dto.js';
 import { RefreshDto } from './dto/refresh.dto.js';
 import { hashIp } from './common/ip-hash.util.js';
-import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
 import { CurrentUser } from './decorators/current-user.decorator.js';
-import { TokenPayload } from './jwt/jwt-token.service.js';
+import type { TokenPayload } from './jwt/jwt-token.service.js';
 
 /** Handles HTTP routes for authentication: OTP request, register, login, and logout */
 @Controller('auth')
@@ -105,7 +105,7 @@ export class AuthController {
    * Requires a valid JWT. SessionId is extracted from the verified JWT payload.
    */
   @Post('logout')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(AuthGuard('jwt'))
   async logout(@CurrentUser() user: TokenPayload) {
     try {
       this.logger.log(`Logout attempt for userId=${user.sub} sessionId=${user.sessionId}`);

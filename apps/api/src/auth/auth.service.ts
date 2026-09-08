@@ -125,7 +125,12 @@ export class AuthService {
         data: { revokedAt: new Date() },
       });
       this.logger.log(`Session revoked session=${sessionId}`);
-    } catch (error) {
+    } catch (error: any) {
+      // P2025 = Prisma record not found error
+      if (error?.code === 'P2025') {
+        this.logger.warn(`Session not found for logout sessionId=${sessionId}`);
+        return;
+      }
       this.logger.error(`Failed to revoke session=${sessionId}`, error instanceof Error ? error.stack : String(error));
       throw new InternalServerErrorException('Failed to logout. Please try again later.');
     }
