@@ -28,19 +28,14 @@ export class JwtTokenService {
 
   /** Signs and returns only the access JWT — refresh token is managed separately by AuthService */
   async generateAccessToken(userId: string, phone: string, sessionId: string): Promise<string> {
-    const payload: TokenPayload = { sub: userId, phone, sessionId };
-    const accessToken = await this.jwtService.signAsync(payload);
-    this.logger.log(`Access token generated for user=${userId} session=${sessionId}`);
-    return accessToken;
-  }
-
-  /** Verifies a JWT access token and returns its payload; throws UnauthorizedException on failure */
-  async verifyAccessToken(token: string): Promise<TokenPayload> {
     try {
-      return await this.jwtService.verifyAsync<TokenPayload>(token);
+      const payload: TokenPayload = { sub: userId, phone, sessionId };
+      const accessToken = await this.jwtService.signAsync(payload);
+      this.logger.log(`Access token generated for user=${userId} session=${sessionId}`);
+      return accessToken;
     } catch (error) {
-      this.logger.error('Access token verification failed', error instanceof Error ? error.stack : String(error));
-      throw new UnauthorizedException('Invalid or expired token');
+      this.logger.error(`Failed to generate access token for user=${userId} session=${sessionId}`, error instanceof Error ? error.stack : String(error));
+      throw new Error('Failed to generate access token');
     }
   }
 
@@ -49,6 +44,25 @@ export class JwtTokenService {
     const salt = randomBytes(16).toString('hex');
     const hash = scryptSync(token, salt, 64).toString('hex');
     return `${salt}:${hash}`;
+  }
+
+  /** Extracts sessionId and random part from a refresh token */
+  private parseRefreshToken(refreshToken: string): { sessionId: string | undefined; randomPart: string } {
+    const sessionId = this.extractSessionIdFromRefreshToken(refreshToken);
+    const randomPart = sessionId ? refreshToken.substring(sessionId.length + 1) : refreshToken;
+    return { sessionId, randomPart };
+  }
+
+  /** Hashes only the random part of a refresh token (excluding sessionId prefix) */
+  hashRefreshTokenRandomPart(refreshToken: string): string {
+    const { randomPart } = this.parseRefreshToken(refreshToken);
+    return this.hashRefreshToken(randomPart);
+  }
+
+  /** Returns the random part of a refresh token for verification */
+  getRefreshTokenRandomPart(refreshToken: string): string {
+    const { randomPart } = this.parseRefreshToken(refreshToken);
+    return randomPart;
   }
 
   /** Verifies a raw refresh token against its stored hash using constant-time comparison */
@@ -66,9 +80,19 @@ export class JwtTokenService {
     }
   }
 
-  /** Generates a cryptographically random refresh token */
-  generateRefreshToken(): string {
-    return randomBytes(32).toString('hex');
+  /** Generates a cryptographically random refresh token with optional sessionId */
+  generateRefreshToken(sessionId?: string): string {
+    const randomPart = randomBytes(32).toString('hex');
+    // Include sessionId to enable session lookup without hash-based search
+    return sessionId ? `${sessionId}:${randomPart}` : randomPart;
+  }
+
+  /** Extracts sessionId from a refresh token, returns undefined if not found */
+  extractSessionIdFromRefreshToken(refreshToken: string): string | undefined {
+    const parts = refreshToken.split(':');
+    // Format is sessionId:randomPart, so sessionId is the first part
+    // If there's no colon, this is an old-format token without sessionId
+    return parts.length >= 2 ? parts[0] : undefined;
   }
 
   /** Returns the expiry Date for a refresh token based on config */

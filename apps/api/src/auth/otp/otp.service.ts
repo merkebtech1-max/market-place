@@ -24,27 +24,36 @@ export class OtpService {
 
   /** Generates, stores, and sends an OTP to the given phone number */
   async requestOtp(phone: string, ipHash?: string): Promise<void> {
-    await this.enforceRateLimit(phone, ipHash);
-
-    const code = this.generateCode();
-    const codeHash = this.hashCode(code);
-    const expiresAt = this.expiryDate();
-
     try {
-      // Send first — only persist to DB if delivery succeeds
-      await this.otpProvider.send({
-        to: phone,
-        message: `Your Merkeb Market code is ${code}. Expires in ${this.expirySeconds() / 60} minutes.`,
-      });
+      this.logger.log(`OTP request initiated for phone=${phone}`);
+      await this.enforceRateLimit(phone, ipHash);
 
-      await this.prisma.otpRequest.create({
-        data: { phone, codeHash, ipHash, expiresAt },
-      });
+      const code = this.generateCode();
+      const codeHash = this.hashCode(code);
+      const expiresAt = this.expiryDate();
 
-      this.logger.log(`OTP sent and stored for phone=${phone}`);
+      try {
+        // Send first — only persist to DB if delivery succeeds
+        await this.otpProvider.send({
+          to: phone,
+          message: `Your Merkeb Market code is ${code}. Expires in ${this.expirySeconds() / 60} minutes.`,
+        });
+
+        await this.prisma.otpRequest.create({
+          data: { phone, codeHash, ipHash, expiresAt },
+        });
+
+        this.logger.log(`OTP sent and stored for phone=${phone}`);
+      } catch (error) {
+        this.logger.error(`Failed to send OTP to phone=${phone}`, error instanceof Error ? error.stack : String(error));
+        throw new InternalServerErrorException('Failed to send OTP. Please try again later.');
+      }
     } catch (error) {
-      this.logger.error(`Failed to send OTP to phone=${phone}`, error instanceof Error ? error.stack : String(error));
-      throw new InternalServerErrorException('Failed to send OTP. Please try again later.');
+      if (error instanceof ConflictException || error instanceof InternalServerErrorException) {
+        throw error;
+      }
+      this.logger.error(`OTP request failed for phone=${phone}`, error instanceof Error ? error.stack : String(error));
+      throw new InternalServerErrorException('OTP request failed. Please try again later.');
     }
   }
 
@@ -53,22 +62,31 @@ export class OtpService {
    * Throws UnauthorizedException if invalid or expired.
    */
   async verifyAndConsumeOtp(phone: string, code: string): Promise<void> {
-    const otpRequest = await this.prisma.otpRequest.findFirst({
-      where: { phone, consumedAt: null, expiresAt: { gt: new Date() } },
-      orderBy: { createdAt: 'desc' },
-    });
+    try {
+      this.logger.log(`OTP verification attempt for phone=${phone}`);
+      const otpRequest = await this.prisma.otpRequest.findFirst({
+        where: { phone, consumedAt: null, expiresAt: { gt: new Date() } },
+        orderBy: { createdAt: 'desc' },
+      });
 
-    if (!otpRequest || !this.verifyCodeHash(code, otpRequest.codeHash)) {
-      this.logger.warn(`Invalid or expired OTP for phone=${phone}`);
-      throw new UnauthorizedException('Invalid or expired OTP');
+      if (!otpRequest || !this.verifyCodeHash(code, otpRequest.codeHash)) {
+        this.logger.warn(`Invalid or expired OTP for phone=${phone}`);
+        throw new UnauthorizedException('Invalid or expired OTP');
+      }
+
+      await this.prisma.otpRequest.update({
+        where: { id: otpRequest.id },
+        data: { consumedAt: new Date() },
+      });
+
+      this.logger.log(`OTP verified and consumed for phone=${phone}`);
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      this.logger.error(`OTP verification failed for phone=${phone}`, error instanceof Error ? error.stack : String(error));
+      throw new InternalServerErrorException('OTP verification failed. Please try again.');
     }
-
-    await this.prisma.otpRequest.update({
-      where: { id: otpRequest.id },
-      data: { consumedAt: new Date() },
-    });
-
-    this.logger.log(`OTP verified and consumed for phone=${phone}`);
   }
 
   /** Generates a random numeric OTP code of configured length */
@@ -112,27 +130,37 @@ export class OtpService {
 
   /** Throws ConflictException if rate limits are exceeded for this phone or IP */
   private async enforceRateLimit(phone: string, ipHash?: string): Promise<void> {
-    // Per-phone: block if there is already an unconsumed, unexpired OTP
-    const phoneBlock = await this.prisma.otpRequest.findFirst({
-      where: { phone, consumedAt: null, expiresAt: { gt: new Date() } },
-      orderBy: { createdAt: 'desc' },
-    });
-    if (phoneBlock) {
-      const wait = Math.ceil((phoneBlock.expiresAt.getTime() - Date.now()) / 1000);
-      throw new ConflictException(`OTP already sent. Wait ${wait}s before requesting a new one.`);
-    }
-
-    // Per-IP: count requests in the current window — allows multiple users
-    // behind the same NAT to each get an OTP, but caps abuse at a threshold.
-    if (ipHash) {
-      const windowStart = new Date(Date.now() - this.expirySeconds() * 1000);
-      const ipCount = await this.prisma.otpRequest.count({
-        where: { ipHash, createdAt: { gt: windowStart } },
+    try {
+      // Per-phone: block if there is already an unconsumed, unexpired OTP
+      const phoneBlock = await this.prisma.otpRequest.findFirst({
+        where: { phone, consumedAt: null, expiresAt: { gt: new Date() } },
+        orderBy: { createdAt: 'desc' },
       });
-      const limit = this.config.get<number>('OTP_IP_RATE_LIMIT', 5);
-      if (ipCount >= limit) {
-        throw new ConflictException('Too many OTP requests from this network. Please try again later.');
+      if (phoneBlock) {
+        const wait = Math.ceil((phoneBlock.expiresAt.getTime() - Date.now()) / 1000);
+        this.logger.warn(`Rate limit exceeded for phone=${phone} wait=${wait}s`);
+        throw new ConflictException(`OTP already sent. Wait ${wait}s before requesting a new one.`);
       }
+
+      // Per-IP: count requests in the current window — allows multiple users
+      // behind the same NAT to each get an OTP, but caps abuse at a threshold.
+      if (ipHash) {
+        const windowStart = new Date(Date.now() - this.expirySeconds() * 1000);
+        const ipCount = await this.prisma.otpRequest.count({
+          where: { ipHash, createdAt: { gt: windowStart } },
+        });
+        const limit = this.config.get<number>('OTP_IP_RATE_LIMIT', 5);
+        if (ipCount >= limit) {
+          this.logger.warn(`IP rate limit exceeded for ipHash=${ipHash} count=${ipCount}`);
+          throw new ConflictException('Too many OTP requests from this network. Please try again later.');
+        }
+      }
+    } catch (error) {
+      if (error instanceof ConflictException) {
+        throw error;
+      }
+      this.logger.error(`Rate limit check failed for phone=${phone}`, error instanceof Error ? error.stack : String(error));
+      throw new InternalServerErrorException('Rate limit check failed. Please try again later.');
     }
   }
 }
