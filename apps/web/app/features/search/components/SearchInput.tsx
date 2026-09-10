@@ -16,14 +16,18 @@ export function SearchInput({
   autoFocus,
   className,
   defaultValue,
+  placeholder,
 }: {
   autoFocus?: boolean;
   className?: string;
   defaultValue?: string;
+  /** Pass `""` to hide the hint text (used on the home hero). */
+  placeholder?: string;
 }) {
   const router = useRouter();
   const t = useTranslations();
   const [query, setQuery] = useState(defaultValue ?? "");
+  const hint = placeholder === undefined ? t("header.searchPlaceholder") : placeholder;
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -49,7 +53,7 @@ export function SearchInput({
           autoFocus={autoFocus}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder={t("header.searchPlaceholder")}
+          placeholder={hint}
           aria-label={t("nav.search")}
           className="h-full w-full min-w-0 bg-transparent text-sm text-ink placeholder:text-ink-muted focus:outline-none"
         />

@@ -23,7 +23,7 @@ export default function NotFound() {
         icon={<CompassIcon />}
         title={t("states.notFoundTitle")}
         body={t("states.notFoundBody")}
-        action={<ButtonLink href="/">{t("nav.home")}</ButtonLink>}
+        action={<ButtonLink href="/home">{t("nav.home")}</ButtonLink>}
         className="mx-auto max-w-md"
       />
     </Container>

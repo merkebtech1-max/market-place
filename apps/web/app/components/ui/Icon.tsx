@@ -200,6 +200,14 @@ export function ShieldIcon(props: IconProps) {
   );
 }
 
+export function CheckIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="m5 12 4.5 4.5L19 7" />
+    </svg>
+  );
+}
+
 export function ShareIcon(props: IconProps) {
   return (
     <svg {...base(props)}>
@@ -225,6 +233,36 @@ export function TagIcon(props: IconProps) {
     <svg {...base(props)}>
       <path d="M3 12 12 3h6a2 2 0 0 1 2 2v6l-9 9a1.5 1.5 0 0 1-2 0L3 14a1.5 1.5 0 0 1 0-2Z" />
       <circle cx="15" cy="7" r="1.4" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+export function LogInIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="M15 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3" />
+      <path d="m10 17 5-5-5-5" />
+      <path d="M15 12H3" />
+    </svg>
+  );
+}
+
+export function LogOutIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <path d="M9 21H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3" />
+      <path d="m16 17 5-5-5-5" />
+      <path d="M21 12H9" />
+    </svg>
+  );
+}
+
+export function UserPlusIcon(props: IconProps) {
+  return (
+    <svg {...base(props)}>
+      <circle cx="9" cy="8" r="4" />
+      <path d="M2 21c1.4-4.3 4.7-7 7-7s5.6 2.7 7 7" />
+      <path d="M19 8v6M22 11h-6" />
     </svg>
   );
 }
