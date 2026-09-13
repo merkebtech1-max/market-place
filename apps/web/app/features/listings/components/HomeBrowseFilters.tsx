@@ -40,7 +40,7 @@ export function HomeBrowseFilters({
       <section aria-label={t("home.feedTitle", { location: subcity || defaultSubcity })}>
         <div className="mb-4 flex flex-wrap items-center gap-2 sm:gap-3">
           <Select
-            wrapperClassName="w-36 sm:w-44"
+            wrapperClassName="min-w-0 flex-1 basis-28 sm:basis-40"
             value={subcity}
             onChange={(e) => setSubcity(e.target.value)}
             aria-label={t("search.location")}
@@ -54,7 +54,7 @@ export function HomeBrowseFilters({
           </Select>
 
           <Select
-            wrapperClassName="w-36 sm:w-44"
+            wrapperClassName="min-w-0 flex-1 basis-28 sm:basis-40"
             value={condition}
             onChange={(e) => setCondition((e.target.value || "") as ListingCondition | "")}
             aria-label={t("search.condition")}
@@ -68,10 +68,13 @@ export function HomeBrowseFilters({
           </Select>
 
           <ButtonLink
-            href={`/search${condition ? `?${new URLSearchParams({ condition }).toString()}` : ""}`}
+            href={`/search${subcity || condition ? `?${new URLSearchParams({
+              ...(subcity ? { subcity } : {}),
+              ...(condition ? { condition } : {}),
+            }).toString()}` : ""}`}
             variant="ghost"
             size="sm"
-            className="ml-auto"
+            className="ml-auto shrink-0"
           >
             {t("common.seeAll")}
           </ButtonLink>

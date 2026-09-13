@@ -2,13 +2,14 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { ButtonLink } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
 import {
   BellIcon,
   CartIcon,
   ChevronDownIcon,
+  ChevronLeftIcon,
   LogOutIcon,
   MapPinIcon,
   PlusCircleIcon,
@@ -100,16 +101,28 @@ function LocationIndicator() {
 export function Header() {
   const t = useTranslations();
   const router = useRouter();
+  const pathname = usePathname();
   const { user, isAuthenticated, signOut } = useSession();
+  const isHome = pathname === "/home";
 
   function handleLogout() {
     signOut();
-    router.push("/home");
+    router.push("/sign-in?mode=login");
   }
 
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-surface/95 backdrop-blur supports-backdrop-filter:bg-surface/80">
       <div className="mx-auto flex h-14 min-w-0 max-w-7xl items-center gap-1 px-3 sm:gap-2.5 sm:px-6">
+        {!isHome && (
+          <Link
+            href="/home"
+            aria-label={t("nav.home")}
+            className="tap-target flex shrink-0 items-center justify-center rounded-full text-ink-muted hover:bg-ink/5 hover:text-ink"
+          >
+            <ChevronLeftIcon className="h-5.5 w-5.5" />
+          </Link>
+        )}
+
         <Link href="/home" className="flex min-w-0 shrink-0 items-center gap-2 font-bold text-primary">
           <Image
             src="/image/logo.jpg"

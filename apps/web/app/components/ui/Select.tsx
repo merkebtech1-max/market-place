@@ -13,18 +13,18 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
     const selectId = id ?? generatedId;
 
     return (
-      <div className={cn("flex flex-col gap-1.5", wrapperClassName)}>
+      <div className={cn("flex min-w-0 flex-col gap-1.5", wrapperClassName)}>
         {label && (
-          <label htmlFor={selectId} className="text-sm font-medium text-ink">
+          <label htmlFor={selectId} className="truncate text-sm font-medium text-ink">
             {label}
           </label>
         )}
-        <div className="relative">
+        <div className="relative min-w-0">
           <select
             ref={ref}
             id={selectId}
             className={cn(
-              "h-11 w-full appearance-none rounded-control border border-border bg-surface pl-3 pr-9 text-sm text-ink transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20",
+              "h-11 w-full min-w-0 appearance-none truncate rounded-control border border-border bg-surface pl-3 pr-9 text-xs text-ink transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 sm:text-sm",
               className
             )}
             {...props}
