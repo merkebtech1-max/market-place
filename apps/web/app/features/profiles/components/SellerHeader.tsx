@@ -13,7 +13,7 @@ export function SellerHeader({
   variant?: "compact" | "full";
 }) {
   return (
-    <div className={variant === "full" ? "flex items-center gap-4" : "flex items-center gap-3"}>
+    <div className={variant === "full" ? "flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-4" : "flex items-center gap-3"}>
       <Avatar name={seller.displayName} src={seller.avatarUrl} size={variant === "full" ? "lg" : "md"} />
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-1.5">

@@ -3,7 +3,9 @@ export interface Category {
   slug: string;
   nameEn: string;
   nameAm: string;
-  /** Emoji glyph — zero-byte, script-neutral icon for the category grid. */
+  /** Emoji fallback if the photo is missing. */
   icon: string;
+  /** Photo from `public/` used as the category tile. */
+  imageUrl: string;
   listingCount: number;
 }

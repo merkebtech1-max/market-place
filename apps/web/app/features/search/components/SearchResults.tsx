@@ -31,7 +31,7 @@ export function SearchResults({ listings }: { listings: Listing[] }) {
   }
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+    <div className="grid grid-cols-2 gap-2 xs:gap-3 sm:grid-cols-3 lg:grid-cols-4">
       {listings.map((listing, i) => (
         <ListingCard key={listing.id} listing={listing} priority={i < 4} />
       ))}

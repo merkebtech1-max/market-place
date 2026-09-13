@@ -1,5 +1,6 @@
 import { PlaceholderPage } from "@/components/layout/PlaceholderPage";
+import { T } from "@/il8n/T";
 
 export default function AdminAuditLogPage() {
-  return <PlaceholderPage title="Audit log" />;
+  return <PlaceholderPage title={<T k="placeholder.adminAuditLogTitle" />} />;
 }
