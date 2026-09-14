@@ -15,6 +15,10 @@ const nextConfig: NextConfig = {
       },
     ],
     formats: ["image/avif", "image/webp"],
+    // Next's image optimizer only serves qualities in this allow-list;
+    // 90 is used for the splash hero photos (SRS perf budget keeps 75 as
+    // the default everywhere else).
+    qualities: [75, 90, 100],
   },
 };
 

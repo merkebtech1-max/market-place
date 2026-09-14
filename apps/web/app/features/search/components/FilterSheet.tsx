@@ -16,7 +16,7 @@ export function FilterSheet() {
 
   return (
     <>
-      <Button variant="outline" size="sm" onClick={() => setOpen(true)} className="lg:hidden">
+      <Button variant="outline" size="sm" onClick={() => setOpen(true)} className="w-full md:hidden sm:w-auto">
         <FilterIcon className="h-4 w-4" />
         {t("common.filters")}
         {activeCount > 0 && (

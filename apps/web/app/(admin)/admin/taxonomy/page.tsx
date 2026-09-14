@@ -1,5 +1,6 @@
 import { PlaceholderPage } from "@/components/layout/PlaceholderPage";
+import { T } from "@/il8n/T";
 
 export default function AdminTaxonomyPage() {
-  return <PlaceholderPage title="Category & attribute editor" />;
+  return <PlaceholderPage title={<T k="placeholder.adminTaxonomyTitle" />} />;
 }

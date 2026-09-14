@@ -8,13 +8,18 @@ import { AuthService } from './auth.service.js';
 import { OtpService } from './otp/otp.service.js';
 import { JwtTokenService } from './jwt/jwt-token.service.js';
 import { JwtStrategy } from './jwt/jwt.strategy.js';
-import { AfroMessageOtpProvider, OTP_PROVIDER } from './otp/otp.providers.js';
+import { AfroMessageOtpProvider, ConsoleOtpProvider, OTP_PROVIDER } from './otp/otp.providers.js';
 
 /** Factory that provides the OTP delivery provider */
 const otpProviderFactory: Provider = {
   provide: OTP_PROVIDER,
   inject: [ConfigService],
-  useFactory: (config: ConfigService) => new AfroMessageOtpProvider(config),
+  useFactory: (config: ConfigService) => {
+    const provider = config.get<string>('SMS_PROVIDER', 'console');
+    return provider === 'afromessage'
+      ? new AfroMessageOtpProvider(config)
+      : new ConsoleOtpProvider();
+  },
 };
 
 /** Auth module — wires OTP, JWT token, and auth services */

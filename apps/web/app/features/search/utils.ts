@@ -22,6 +22,7 @@ export function parseFilters(searchParams: Record<string, string | string[] | un
     q: get("q") || undefined,
     category: get("category") || undefined,
     city: get("city") || undefined,
+    subcity: get("subcity") || undefined,
     condition: condition && CONDITIONS.includes(condition as ListingCondition) ? (condition as ListingCondition) : undefined,
     minPrice: minPrice ? Number(minPrice) : undefined,
     maxPrice: maxPrice ? Number(maxPrice) : undefined,
@@ -38,6 +39,7 @@ export function filtersToSearchParams(filters: SearchFilters): URLSearchParams {
   if (filters.q) params.set("q", filters.q);
   if (filters.category) params.set("category", filters.category);
   if (filters.city) params.set("city", filters.city);
+  if (filters.subcity) params.set("subcity", filters.subcity);
   if (filters.condition) params.set("condition", filters.condition);
   if (filters.minPrice) params.set("minPrice", String(filters.minPrice));
   if (filters.maxPrice) params.set("maxPrice", String(filters.maxPrice));
@@ -51,6 +53,7 @@ export function countActiveFilters(filters: SearchFilters): number {
   return [
     filters.category,
     filters.city,
+    filters.subcity,
     filters.condition,
     filters.minPrice,
     filters.maxPrice,
@@ -77,6 +80,7 @@ export function applyFilters(listings: Listing[], filters: SearchFilters): Listi
     if (q && !`${l.title} ${l.description}`.toLowerCase().includes(q)) return false;
     if (categoryId && l.categoryId !== categoryId) return false;
     if (filters.city && l.city !== filters.city) return false;
+    if (filters.subcity && l.subcity !== filters.subcity) return false;
     if (filters.condition && l.condition !== filters.condition) return false;
     if (filters.minPrice && l.priceCents < filters.minPrice * 100) return false;
     if (filters.maxPrice && l.priceCents > filters.maxPrice * 100) return false;

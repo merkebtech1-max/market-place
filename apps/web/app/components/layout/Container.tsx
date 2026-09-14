@@ -7,5 +7,5 @@ interface ContainerProps extends HTMLAttributes<HTMLElement> {
 
 /** Fluid, mobile-first content wrapper — the single source of page gutters. */
 export function Container({ as: Tag = "div", className, ...props }: ContainerProps) {
-  return <Tag className={cn("mx-auto w-full max-w-7xl px-4 sm:px-6", className)} {...props} />;
+  return <Tag className={cn("mx-auto w-full min-w-0 max-w-7xl px-3 xs:px-4 sm:px-6", className)} {...props} />;
 }

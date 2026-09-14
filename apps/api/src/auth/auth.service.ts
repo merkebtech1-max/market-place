@@ -37,13 +37,15 @@ export class AuthService {
   async login(phone: string, code: string, userAgent?: string, ipHash?: string): Promise<AuthResult> {
     try {
       this.logger.log(`Login attempt for phone=${phone}`);
-      await this.otpService.verifyAndConsumeOtp(phone, code);
-
       const user = await this.prisma.user.findUnique({ where: { phone } });
       if (!user) {
         this.logger.warn(`User not found for phone=${phone}`);
         throw new NotFoundException('No account found for this number. Please register first.');
       }
+
+      // Only consume the code after confirming this is a login. A new user can
+      // then reuse the same valid code on the registration endpoint.
+      await this.otpService.verifyAndConsumeOtp(phone, code);
 
       const { session, refreshToken } = await this.createSession(user.id, userAgent, ipHash);
       const accessToken = await this.jwtTokenService.generateAccessToken(user.id, user.phone, session.id);
