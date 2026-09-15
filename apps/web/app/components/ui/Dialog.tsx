@@ -42,14 +42,14 @@ export function Dialog({ open, onOpenChange, title, children, footer, variant = 
       className={cn(
         "m-0 max-h-none w-full max-w-full bg-transparent p-0 backdrop:bg-ink/40 backdrop:backdrop-blur-[1px]",
         variant === "sheet"
-          ? "fixed inset-x-0 bottom-0 top-auto"
-          : "fixed inset-0 flex items-center justify-center p-4"
+          ? "fixed inset-x-0 bottom-0 top-auto z-50"
+          : "fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4"
       )}
     >
       <div
         className={cn(
           "flex max-h-[85vh] w-full flex-col overflow-hidden bg-surface shadow-elevation-2",
-          variant === "sheet" ? "rounded-t-sheet" : "max-w-md rounded-card",
+          variant === "sheet" ? "max-h-[min(85vh,100dvh)] rounded-t-sheet pb-[env(safe-area-inset-bottom)]" : "max-w-md rounded-card",
           className
         )}
       >
@@ -67,7 +67,7 @@ export function Dialog({ open, onOpenChange, title, children, footer, variant = 
           </div>
         )}
         <div className="flex-1 overflow-y-auto p-4">{children}</div>
-        {footer && <div className="flex shrink-0 gap-2 border-t border-border p-4">{footer}</div>}
+        {footer && <div className="flex shrink-0 flex-col gap-2 border-t border-border p-3 xs:flex-row sm:p-4">{footer}</div>}
       </div>
     </dialog>
   );

@@ -2,7 +2,7 @@
 
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
-import { categories, cities } from "@/lib/mock-data";
+import { categories, subcitiesByCity } from "@/lib/mock-data";
 import { useLanguage, useTranslations } from "@/il8n/LanguageProvider";
 import type { SearchFilters } from "../types";
 
@@ -74,13 +74,13 @@ export function ListingFilters({
 
       <Select
         label={t("search.location")}
-        value={value.city ?? ""}
-        onChange={(e) => onChange({ city: e.target.value || undefined })}
+        value={value.subcity ?? ""}
+        onChange={(e) => onChange({ subcity: e.target.value || undefined })}
       >
         <option value="">{t("search.anyLocation")}</option>
-        {cities.map((city) => (
-          <option key={city} value={city}>
-            {city}
+        {(subcitiesByCity["Addis Ababa"] ?? []).map((subcity) => (
+          <option key={subcity} value={subcity}>
+            {subcity}
           </option>
         ))}
       </Select>

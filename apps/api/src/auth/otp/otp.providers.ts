@@ -21,6 +21,16 @@ export abstract class OtpProvider {
 
 export const OTP_PROVIDER = Symbol('OTP_PROVIDER');
 
+/** Local-only provider: prints the OTP message to the API terminal. */
+@Injectable()
+export class ConsoleOtpProvider implements OtpProvider {
+  private readonly logger = new Logger(ConsoleOtpProvider.name);
+
+  async send({ to, message }: SendOtpParams): Promise<void> {
+    this.logger.log(`[CONSOLE OTP] to=${to} message="${message}"`);
+  }
+}
+
 @Injectable()
 export class AfroMessageOtpProvider implements OtpProvider {
   private readonly logger = new Logger(AfroMessageOtpProvider.name);

@@ -120,7 +120,7 @@ export class OtpService {
 
   /** Returns the configured OTP expiry duration in seconds */
   private expirySeconds(): number {
-    return this.config.get<number>('OTP_EXPIRY_SECONDS', 300);
+    return this.config.get<number>('OTP_EXPIRY_SECONDS', 60);
   }
 
   /** Returns the absolute expiry Date for a new OTP */

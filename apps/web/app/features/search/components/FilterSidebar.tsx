@@ -11,7 +11,7 @@ export function FilterSidebar() {
   const { draft, patch, apply, clear, activeCount } = useFilterDraft();
 
   return (
-    <aside className="hidden w-72 shrink-0 lg:block">
+    <aside className="hidden w-64 shrink-0 md:block lg:w-72">
       <div className="sticky top-24 rounded-card border border-border bg-surface p-4">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-base font-semibold text-ink">{t("common.filters")}</h2>
