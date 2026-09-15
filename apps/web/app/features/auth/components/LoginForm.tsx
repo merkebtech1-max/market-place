@@ -50,7 +50,7 @@ export function LoginForm() {
       setPhone(normalizedPhone);
       setCode("");
       setStep("otp");
-      setSecondsUntilResend(60);
+      setSecondsUntilResend(300);
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : t("auth.genericError"));
     } finally {
