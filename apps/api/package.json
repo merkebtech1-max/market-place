@@ -19,6 +19,7 @@
     "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
     "db:push": "prisma db push",
+    "db:seed": "tsx prisma/seed.ts",
     "lint": "oxlint src/ test/",
     "test": "vitest run",
     "test:watch": "vitest",
