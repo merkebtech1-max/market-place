@@ -10,13 +10,15 @@ async function main() {
   console.log('🌱 Starting seed...');
 
   // ============================================================
-  // CATEGORIES - Hierarchical Structure
+  // CATEGORIES - Hierarchical Structure (Idempotent with upsert)
   // ============================================================
   console.log('📁 Seeding categories...');
 
   // Root categories
-  const electronics = await prisma.category.create({
-    data: {
+  const electronics = await prisma.category.upsert({
+    where: { slug: 'electronics' },
+    update: {},
+    create: {
       slug: 'electronics',
       nameEn: 'Electronics',
       nameAm: 'ኤሌክትሮኒክስ',
@@ -26,8 +28,10 @@ async function main() {
     },
   });
 
-  const vehicles = await prisma.category.create({
-    data: {
+  const vehicles = await prisma.category.upsert({
+    where: { slug: 'vehicles' },
+    update: {},
+    create: {
       slug: 'vehicles',
       nameEn: 'Vehicles',
       nameAm: 'ተሽከርካሪዎች',
@@ -37,8 +41,10 @@ async function main() {
     },
   });
 
-  const property = await prisma.category.create({
-    data: {
+  const property = await prisma.category.upsert({
+    where: { slug: 'property' },
+    update: {},
+    create: {
       slug: 'property',
       nameEn: 'Property',
       nameAm: 'ንብረት',
@@ -48,8 +54,10 @@ async function main() {
     },
   });
 
-  const fashion = await prisma.category.create({
-    data: {
+  const fashion = await prisma.category.upsert({
+    where: { slug: 'fashion' },
+    update: {},
+    create: {
       slug: 'fashion',
       nameEn: 'Fashion',
       nameAm: 'ፋሽን',
@@ -59,8 +67,10 @@ async function main() {
     },
   });
 
-  const home = await prisma.category.create({
-    data: {
+  const home = await prisma.category.upsert({
+    where: { slug: 'home' },
+    update: {},
+    create: {
       slug: 'home',
       nameEn: 'Home & Garden',
       nameAm: 'ቤት እና ግማሽ',
@@ -70,8 +80,10 @@ async function main() {
     },
   });
 
-  const services = await prisma.category.create({
-    data: {
+  const services = await prisma.category.upsert({
+    where: { slug: 'services' },
+    update: {},
+    create: {
       slug: 'services',
       nameEn: 'Services',
       nameAm: 'አገልግሎቶች',
@@ -82,8 +94,10 @@ async function main() {
   });
 
   // Electronics children
-  const phones = await prisma.category.create({
-    data: {
+  const phones = await prisma.category.upsert({
+    where: { slug: 'phones' },
+    update: {},
+    create: {
       parentId: electronics.id,
       slug: 'phones',
       nameEn: 'Phones',
@@ -94,8 +108,10 @@ async function main() {
     },
   });
 
-  const laptops = await prisma.category.create({
-    data: {
+  const laptops = await prisma.category.upsert({
+    where: { slug: 'laptops' },
+    update: {},
+    create: {
       parentId: electronics.id,
       slug: 'laptops',
       nameEn: 'Laptops',
@@ -106,8 +122,10 @@ async function main() {
     },
   });
 
-  const tvs = await prisma.category.create({
-    data: {
+  const tvs = await prisma.category.upsert({
+    where: { slug: 'tvs' },
+    update: {},
+    create: {
       parentId: electronics.id,
       slug: 'tvs',
       nameEn: 'TVs',
@@ -118,8 +136,10 @@ async function main() {
     },
   });
 
-  const tablets = await prisma.category.create({
-    data: {
+  const tablets = await prisma.category.upsert({
+    where: { slug: 'tablets' },
+    update: {},
+    create: {
       parentId: electronics.id,
       slug: 'tablets',
       nameEn: 'Tablets',
@@ -130,8 +150,10 @@ async function main() {
     },
   });
 
-  const accessories = await prisma.category.create({
-    data: {
+  const accessories = await prisma.category.upsert({
+    where: { slug: 'accessories' },
+    update: {},
+    create: {
       parentId: electronics.id,
       slug: 'accessories',
       nameEn: 'Accessories',
@@ -143,8 +165,10 @@ async function main() {
   });
 
   // Vehicles children
-  const cars = await prisma.category.create({
-    data: {
+  const cars = await prisma.category.upsert({
+    where: { slug: 'cars' },
+    update: {},
+    create: {
       parentId: vehicles.id,
       slug: 'cars',
       nameEn: 'Cars',
@@ -155,8 +179,10 @@ async function main() {
     },
   });
 
-  const motorcycles = await prisma.category.create({
-    data: {
+  const motorcycles = await prisma.category.upsert({
+    where: { slug: 'motorcycles' },
+    update: {},
+    create: {
       parentId: vehicles.id,
       slug: 'motorcycles',
       nameEn: 'Motorcycles',
@@ -167,8 +193,10 @@ async function main() {
     },
   });
 
-  const parts = await prisma.category.create({
-    data: {
+  const parts = await prisma.category.upsert({
+    where: { slug: 'parts' },
+    update: {},
+    create: {
       parentId: vehicles.id,
       slug: 'parts',
       nameEn: 'Spare Parts',
@@ -180,8 +208,10 @@ async function main() {
   });
 
   // Property children
-  const apartments = await prisma.category.create({
-    data: {
+  const apartments = await prisma.category.upsert({
+    where: { slug: 'apartments' },
+    update: {},
+    create: {
       parentId: property.id,
       slug: 'apartments',
       nameEn: 'Apartments',
@@ -192,8 +222,10 @@ async function main() {
     },
   });
 
-  const houses = await prisma.category.create({
-    data: {
+  const houses = await prisma.category.upsert({
+    where: { slug: 'houses' },
+    update: {},
+    create: {
       parentId: property.id,
       slug: 'houses',
       nameEn: 'Houses',
@@ -204,8 +236,10 @@ async function main() {
     },
   });
 
-  const land = await prisma.category.create({
-    data: {
+  const land = await prisma.category.upsert({
+    where: { slug: 'land' },
+    update: {},
+    create: {
       parentId: property.id,
       slug: 'land',
       nameEn: 'Land',
@@ -217,8 +251,10 @@ async function main() {
   });
 
   // Fashion children
-  const mensFashion = await prisma.category.create({
-    data: {
+  const mensFashion = await prisma.category.upsert({
+    where: { slug: 'mens-fashion' },
+    update: {},
+    create: {
       parentId: fashion.id,
       slug: 'mens-fashion',
       nameEn: "Men's Fashion",
@@ -229,8 +265,10 @@ async function main() {
     },
   });
 
-  const womensFashion = await prisma.category.create({
-    data: {
+  const womensFashion = await prisma.category.upsert({
+    where: { slug: 'womens-fashion' },
+    update: {},
+    create: {
       parentId: fashion.id,
       slug: 'womens-fashion',
       nameEn: "Women's Fashion",
@@ -241,8 +279,10 @@ async function main() {
     },
   });
 
-  const kidsFashion = await prisma.category.create({
-    data: {
+  const kidsFashion = await prisma.category.upsert({
+    where: { slug: 'kids-fashion' },
+    update: {},
+    create: {
       parentId: fashion.id,
       slug: 'kids-fashion',
       nameEn: "Kids' Fashion",
@@ -254,8 +294,10 @@ async function main() {
   });
 
   // Home children
-  const furniture = await prisma.category.create({
-    data: {
+  const furniture = await prisma.category.upsert({
+    where: { slug: 'furniture' },
+    update: {},
+    create: {
       parentId: home.id,
       slug: 'furniture',
       nameEn: 'Furniture',
@@ -266,8 +308,10 @@ async function main() {
     },
   });
 
-  const kitchen = await prisma.category.create({
-    data: {
+  const kitchen = await prisma.category.upsert({
+    where: { slug: 'kitchen' },
+    update: {},
+    create: {
       parentId: home.id,
       slug: 'kitchen',
       nameEn: 'Kitchen',
@@ -278,8 +322,10 @@ async function main() {
     },
   });
 
-  const garden = await prisma.category.create({
-    data: {
+  const garden = await prisma.category.upsert({
+    where: { slug: 'garden' },
+    update: {},
+    create: {
       parentId: home.id,
       slug: 'garden',
       nameEn: 'Garden',
@@ -291,8 +337,10 @@ async function main() {
   });
 
   // Services children
-  const tutoring = await prisma.category.create({
-    data: {
+  const tutoring = await prisma.category.upsert({
+    where: { slug: 'tutoring' },
+    update: {},
+    create: {
       parentId: services.id,
       slug: 'tutoring',
       nameEn: 'Tutoring',
@@ -303,8 +351,10 @@ async function main() {
     },
   });
 
-  const repair = await prisma.category.create({
-    data: {
+  const repair = await prisma.category.upsert({
+    where: { slug: 'repair' },
+    update: {},
+    create: {
       parentId: services.id,
       slug: 'repair',
       nameEn: 'Repair Services',
@@ -315,8 +365,10 @@ async function main() {
     },
   });
 
-  const cleaning = await prisma.category.create({
-    data: {
+  const cleaning = await prisma.category.upsert({
+    where: { slug: 'cleaning' },
+    update: {},
+    create: {
       parentId: services.id,
       slug: 'cleaning',
       nameEn: 'Cleaning',
@@ -327,230 +379,209 @@ async function main() {
     },
   });
 
-  console.log(`✅ Created ${await prisma.category.count()} categories`);
+  console.log(`✅ Seeded ${await prisma.category.count()} categories`);
 
   // ============================================================
-  // LOCATIONS - Hierarchical Structure
+  // LOCATIONS - Hierarchical Structure (Idempotent)
   // ============================================================
   console.log('📍 Seeding locations...');
 
+  // Helper function for idempotent location creation
+  const createLocation = async (data: any) => {
+    const existing = await prisma.location.findFirst({
+      where: {
+        nameEn: data.nameEn,
+        type: data.type,
+        parentId: data.parentId || null,
+      },
+    });
+    if (existing) return existing;
+    return prisma.location.create({ data });
+  };
+
   // Regions
-  const addisAbaba = await prisma.location.create({
-    data: {
-      type: 'REGION',
-      nameEn: 'Addis Ababa',
-      nameAm: 'አዲስ አበባ',
-    },
+  const addisAbaba = await createLocation({
+    type: 'REGION',
+    nameEn: 'Addis Ababa',
+    nameAm: 'አዲስ አበባ',
   });
 
-  const oromia = await prisma.location.create({
-    data: {
-      type: 'REGION',
-      nameEn: 'Oromia',
-      nameAm: 'ኦሮሚያ',
-    },
+  const oromia = await createLocation({
+    type: 'REGION',
+    nameEn: 'Oromia',
+    nameAm: 'ኦሮሚያ',
   });
 
-  const amhara = await prisma.location.create({
-    data: {
-      type: 'REGION',
-      nameEn: 'Amhara',
-      nameAm: 'አማራ',
-    },
+  const amhara = await createLocation({
+    type: 'REGION',
+    nameEn: 'Amhara',
+    nameAm: 'አማራ',
   });
 
-  const tigray = await prisma.location.create({
-    data: {
-      type: 'REGION',
-      nameEn: 'Tigray',
-      nameAm: 'ትግራይ',
-    },
+  const tigray = await createLocation({
+    type: 'REGION',
+    nameEn: 'Tigray',
+    nameAm: 'ትግራይ',
   });
 
-  const sNNPR = await prisma.location.create({
-    data: {
-      type: 'REGION',
-      nameEn: 'SNNPR',
-      nameAm: 'ደቡብ ብሔራዊ ክልላት',
-    },
+  const sNNPR = await createLocation({
+    type: 'REGION',
+    nameEn: 'SNNPR',
+    nameAm: 'ደቡብ ብሔራዊ ክልላት',
   });
 
-  // Addis Ababa Subcities
-  const bole = await prisma.location.create({
-    data: {
-      parentId: addisAbaba.id,
-      type: 'SUBCITY',
-      nameEn: 'Bole',
-      nameAm: 'ቦሌ',
-    },
+  // Addis Ababa Subcities (Addis Ababa is a region with subcities directly, no cities)
+  const bole = await createLocation({
+    parentId: addisAbaba.id,
+    type: 'SUBCITY',
+    nameEn: 'Bole',
+    nameAm: 'ቦሌ',
   });
 
-  const yeka = await prisma.location.create({
-    data: {
-      parentId: addisAbaba.id,
-      type: 'SUBCITY',
-      nameEn: 'Yeka',
-      nameAm: 'የካ',
-    },
+  const yeka = await createLocation({
+    parentId: addisAbaba.id,
+    type: 'SUBCITY',
+    nameEn: 'Yeka',
+    nameAm: 'የካ',
   });
 
-  const kolfe = await prisma.location.create({
-    data: {
-      parentId: addisAbaba.id,
-      type: 'SUBCITY',
-      nameEn: 'Kolfe Keranio',
-      nameAm: 'ቆለፌ ቀራንዮ',
-    },
+  const kolfe = await createLocation({
+    parentId: addisAbaba.id,
+    type: 'SUBCITY',
+    nameEn: 'Kolfe Keranio',
+    nameAm: 'ቆለፌ ቀራንዮ',
   });
 
-  const kirkos = await prisma.location.create({
-    data: {
-      parentId: addisAbaba.id,
-      type: 'SUBCITY',
-      nameEn: 'Kirkos',
-      nameAm: 'ኪሮስ',
-    },
+  const kirkos = await createLocation({
+    parentId: addisAbaba.id,
+    type: 'SUBCITY',
+    nameEn: 'Kirkos',
+    nameAm: 'ኪሮስ',
   });
 
-  const arada = await prisma.location.create({
-    data: {
-      parentId: addisAbaba.id,
-      type: 'SUBCITY',
-      nameEn: 'Arada',
-      nameAm: 'አራዳ',
-    },
+  const arada = await createLocation({
+    parentId: addisAbaba.id,
+    type: 'SUBCITY',
+    nameEn: 'Arada',
+    nameAm: 'አራዳ',
   });
 
-  const lideta = await prisma.location.create({
-    data: {
-      parentId: addisAbaba.id,
-      type: 'SUBCITY',
-      nameEn: 'Lideta',
-      nameAm: 'ልደታ',
-    },
+  const lideta = await createLocation({
+    parentId: addisAbaba.id,
+    type: 'SUBCITY',
+    nameEn: 'Lideta',
+    nameAm: 'ልደታ',
   });
 
-  const gulele = await prisma.location.create({
-    data: {
-      parentId: addisAbaba.id,
-      type: 'SUBCITY',
-      nameEn: 'Gulele',
-      nameAm: 'ጉለሌ',
-    },
+  const gulele = await createLocation({
+    parentId: addisAbaba.id,
+    type: 'SUBCITY',
+    nameEn: 'Gulele',
+    nameAm: 'ጉለሌ',
   });
 
-  const akaky = await prisma.location.create({
-    data: {
-      parentId: addisAbaba.id,
-      type: 'SUBCITY',
-      nameEn: 'Akaky Kaliti',
-      nameAm: 'አቃቂ ቃሊቲ',
-    },
+  const akaky = await createLocation({
+    parentId: addisAbaba.id,
+    type: 'SUBCITY',
+    nameEn: 'Akaky Kaliti',
+    nameAm: 'አቃቂ ቃሊቲ',
   });
 
-  const nifas = await prisma.location.create({
-    data: {
-      parentId: addisAbaba.id,
-      type: 'SUBCITY',
-      nameEn: 'Nifas Silk',
-      nameAm: 'ኒፋስ ስልክ',
-    },
+  const nifas = await createLocation({
+    parentId: addisAbaba.id,
+    type: 'SUBCITY',
+    nameEn: 'Nifas Silk-Lafto',
+    nameAm: 'ኒፋስ ስልክ ላፍቶ',
+  });
+
+  const addisKetema = await createLocation({
+    parentId: addisAbaba.id,
+    type: 'SUBCITY',
+    nameEn: 'Addis Ketema',
+    nameAm: 'አዲስ ከተማ',
+  });
+
+  const lemi = await createLocation({
+    parentId: addisAbaba.id,
+    type: 'SUBCITY',
+    nameEn: 'Lemi Kura',
+    nameAm: 'ለሚ ኩራ',
   });
 
   // Oromia Cities
-  const adama = await prisma.location.create({
-    data: {
-      parentId: oromia.id,
-      type: 'CITY',
-      nameEn: 'Adama',
-      nameAm: 'አዳማ',
-    },
+  const adama = await createLocation({
+    parentId: oromia.id,
+    type: 'CITY',
+    nameEn: 'Adama',
+    nameAm: 'አዳማ',
   });
 
-  const hawassa = await prisma.location.create({
-    data: {
-      parentId: oromia.id,
-      type: 'CITY',
-      nameEn: 'Hawassa',
-      nameAm: 'ሃዋሳ',
-    },
+  const hawassa = await createLocation({
+    parentId: oromia.id,
+    type: 'CITY',
+    nameEn: 'Hawassa',
+    nameAm: 'ሃዋሳ',
   });
 
-  const jimma = await prisma.location.create({
-    data: {
-      parentId: oromia.id,
-      type: 'CITY',
-      nameEn: 'Jimma',
-      nameAm: 'ጅማ',
-    },
+  const jimma = await createLocation({
+    parentId: oromia.id,
+    type: 'CITY',
+    nameEn: 'Jimma',
+    nameAm: 'ጅማ',
   });
 
-  const bishoftu = await prisma.location.create({
-    data: {
-      parentId: oromia.id,
-      type: 'CITY',
-      nameEn: 'Bishoftu',
-      nameAm: 'ቢሸፍቱ',
-    },
+  const bishoftu = await createLocation({
+    parentId: oromia.id,
+    type: 'CITY',
+    nameEn: 'Bishoftu',
+    nameAm: 'ቢሸፍቱ',
   });
 
   // Amhara Cities
-  const bahirDar = await prisma.location.create({
-    data: {
-      parentId: amhara.id,
-      type: 'CITY',
-      nameEn: 'Bahir Dar',
-      nameAm: 'ባህር ዳር',
-    },
+  const bahirDar = await createLocation({
+    parentId: amhara.id,
+    type: 'CITY',
+    nameEn: 'Bahir Dar',
+    nameAm: 'ባህር ዳር',
   });
 
-  const gondar = await prisma.location.create({
-    data: {
-      parentId: amhara.id,
-      type: 'CITY',
-      nameEn: 'Gondar',
-      nameAm: 'ጎንደር',
-    },
+  const gondar = await createLocation({
+    parentId: amhara.id,
+    type: 'CITY',
+    nameEn: 'Gondar',
+    nameAm: 'ጎንደር',
   });
 
-  const dessie = await prisma.location.create({
-    data: {
-      parentId: amhara.id,
-      type: 'CITY',
-      nameEn: 'Dessie',
-      nameAm: 'ደሴ',
-    },
+  const dessie = await createLocation({
+    parentId: amhara.id,
+    type: 'CITY',
+    nameEn: 'Dessie',
+    nameAm: 'ደሴ',
   });
 
   // Tigray Cities
-  const mekelle = await prisma.location.create({
-    data: {
-      parentId: tigray.id,
-      type: 'CITY',
-      nameEn: 'Mekelle',
-      nameAm: 'መቀሌ',
-    },
+  const mekelle = await createLocation({
+    parentId: tigray.id,
+    type: 'CITY',
+    nameEn: 'Mekelle',
+    nameAm: 'መቀሌ',
   });
 
-  const adigrat = await prisma.location.create({
-    data: {
-      parentId: tigray.id,
-      type: 'CITY',
-      nameEn: 'Adigrat',
-      nameAm: 'አዲግራት',
-    },
+  const adigrat = await createLocation({
+    parentId: tigray.id,
+    type: 'CITY',
+    nameEn: 'Adigrat',
+    nameAm: 'አዲግራት',
   });
 
-  const axum = await prisma.location.create({
-    data: {
-      parentId: tigray.id,
-      type: 'CITY',
-      nameEn: 'Axum',
-      nameAm: 'አክሱም',
-    },
+  const axum = await createLocation({
+    parentId: tigray.id,
+    type: 'CITY',
+    nameEn: 'Axum',
+    nameAm: 'አክሱም',
   });
 
-  console.log(`✅ Created ${await prisma.location.count()} locations`);
+  console.log(`✅ Seeded ${await prisma.location.count()} locations`);
 
   console.log('🎉 Seed completed successfully!');
 }
