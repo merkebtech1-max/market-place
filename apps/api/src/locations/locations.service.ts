@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { LocationType } from '../generated/prisma/enums.js';
 
@@ -13,9 +13,11 @@ export class LocationsService {
    * Returns regions with their cities and subcities nested
    */
   async getAllLocations() {
+    this.logger.log('[START] Fetching all locations from database');
+    
     try {
-      this.logger.log('Fetching all locations');
-
+      this.logger.debug('[QUERY] Executing Prisma query to find locations with hierarchical children');
+      
       const locations = await this.prisma.location.findMany({
         orderBy: [{ nameEn: 'asc' }],
         include: {
@@ -30,14 +32,18 @@ export class LocationsService {
         },
       });
 
+      this.logger.debug(`[RESULT] Retrieved ${locations.length} total locations from database`);
+
       // Return only root locations (those without parentId - regions)
       const rootLocations = locations.filter((loc) => !loc.parentId);
 
-      this.logger.log(`Found ${rootLocations.length} root locations (regions)`);
+      this.logger.log(`[SUCCESS] Successfully retrieved ${rootLocations.length} root locations (regions) with hierarchical structure`);
+      this.logger.debug(`[DETAIL] Root regions: ${rootLocations.map(l => `${l.nameEn} (${l.id})`).join(', ')}`);
+      
       return rootLocations;
     } catch (error) {
-      this.logger.error('Failed to fetch locations', error);
-      throw error;
+      this.logger.error(`[ERROR] Failed to fetch locations from database - ${error instanceof Error ? error.message : 'Unknown error'}`, error instanceof Error ? error.stack : String(error));
+      throw new InternalServerErrorException('Unable to retrieve locations at this time. Please try again later.');
     }
   }
 
@@ -46,19 +52,23 @@ export class LocationsService {
    * Useful for dropdowns that only need specific location types
    */
   async getLocationsByType(type: LocationType) {
+    this.logger.log(`[START] Fetching locations by type: ${type}`);
+    
     try {
-      this.logger.log(`Fetching locations by type: ${type}`);
-
+      this.logger.debug(`[QUERY] Executing Prisma query to find locations with type=${type}`);
+      
       const locations = await this.prisma.location.findMany({
         where: { type },
         orderBy: [{ nameEn: 'asc' }],
       });
 
-      this.logger.log(`Found ${locations.length} locations of type ${type}`);
+      this.logger.log(`[SUCCESS] Successfully retrieved ${locations.length} locations of type ${type}`);
+      this.logger.debug(`[DETAIL] Locations: ${locations.map(l => `${l.nameEn} (${l.id})`).join(', ')}`);
+      
       return locations;
     } catch (error) {
-      this.logger.error(`Failed to fetch locations by type ${type}`, error);
-      throw error;
+      this.logger.error(`[ERROR] Failed to fetch locations by type ${type} - ${error instanceof Error ? error.message : 'Unknown error'}`, error instanceof Error ? error.stack : String(error));
+      throw new InternalServerErrorException(`Unable to retrieve locations of type ${type} at this time. Please try again later.`);
     }
   }
 }
