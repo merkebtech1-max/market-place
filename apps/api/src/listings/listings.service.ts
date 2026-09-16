@@ -35,44 +35,72 @@ export class ListingsService {
 
   /** Validates that a category exists and is active */
   private async validateCategory(categoryId: string): Promise<void> {
+    this.logger.debug(`[VALIDATION] Checking category existence and active status: categoryId=${categoryId}`);
+    
     const category = await this.prisma.category.findUnique({
       where: { id: categoryId },
     });
+    
     if (!category) {
-      throw new NotFoundException('Category not found');
+      this.logger.warn(`[VALIDATION] Category not found: categoryId=${categoryId}`);
+      throw new NotFoundException(`Category with ID ${categoryId} not found. Please select a valid category.`);
     }
+    
     if (!category.isActive) {
-      throw new BadRequestException('This category is not available for new listings');
+      this.logger.warn(`[VALIDATION] Category is not active: categoryId=${categoryId}, name=${category.nameEn}`);
+      throw new BadRequestException(`The category "${category.nameEn}" is not available for new listings at this time.`);
     }
+    
+    this.logger.debug(`[VALIDATION] Category validated successfully: categoryId=${categoryId}, name=${category.nameEn}`);
   }
 
-  /** Validates that a city exists and is of type CITY */
+  /**
+   * Validates that a location is usable as a city.
+   * Accepts CITY type or REGION type — Addis Ababa is a region whose
+   * subcities are direct children with no intermediate city layer.
+   */
   private async validateCity(cityId: string): Promise<void> {
-    const city = await this.prisma.location.findUnique({
-      where: { id: cityId },
-    });
+    this.logger.debug(`[VALIDATION] Checking city existence and type: cityId=${cityId}`);
+
+    const city = await this.prisma.location.findUnique({ where: { id: cityId } });
+
     if (!city) {
-      throw new NotFoundException('City not found');
+      this.logger.warn(`[VALIDATION] City not found: cityId=${cityId}`);
+      throw new NotFoundException(`City with ID ${cityId} not found. Please select a valid city.`);
     }
-    if (city.type !== LocationType.CITY) {
-      throw new BadRequestException('Invalid location: must be a city');
+
+    if (city.type !== LocationType.CITY && city.type !== LocationType.REGION) {
+      this.logger.warn(`[VALIDATION] Invalid location type: cityId=${cityId}, type=${city.type}`);
+      throw new BadRequestException(`The location "${city.nameEn}" cannot be used as a city. Please select a valid city.`);
     }
+
+    this.logger.debug(`[VALIDATION] City validated successfully: cityId=${cityId}, name=${city.nameEn}, type=${city.type}`);
   }
 
   /** Validates that a subcity exists, is of type SUBCITY, and belongs to the specified city */
   private async validateSubcity(subcityId: string, cityId: string): Promise<void> {
+    this.logger.debug(`[VALIDATION] Checking subcity existence, type, and parent: subcityId=${subcityId}, cityId=${cityId}`);
+    
     const subcity = await this.prisma.location.findUnique({
       where: { id: subcityId },
     });
+    
     if (!subcity) {
-      throw new NotFoundException('Subcity not found');
+      this.logger.warn(`[VALIDATION] Subcity not found: subcityId=${subcityId}`);
+      throw new NotFoundException(`Subcity with ID ${subcityId} not found. Please select a valid subcity.`);
     }
+    
     if (subcity.type !== LocationType.SUBCITY) {
-      throw new BadRequestException('Invalid location: must be a subcity');
+      this.logger.warn(`[VALIDATION] Invalid location type: subcityId=${subcityId}, type=${subcity.type}, expected=SUBCITY`);
+      throw new BadRequestException(`The location "${subcity.nameEn}" is not a subcity. Please select a valid subcity for your listing.`);
     }
+    
     if (subcity.parentId !== cityId) {
-      throw new BadRequestException('Subcity does not belong to the specified city');
+      this.logger.warn(`[VALIDATION] Subcity does not belong to city: subcityId=${subcityId}, subcityParentId=${subcity.parentId}, cityId=${cityId}`);
+      throw new BadRequestException(`The subcity "${subcity.nameEn}" does not belong to the selected city. Please select a subcity within your chosen city.`);
     }
+    
+    this.logger.debug(`[VALIDATION] Subcity validated successfully: subcityId=${subcityId}, name=${subcity.nameEn}, parentCityId=${cityId}`);
   }
 
   /**
@@ -81,9 +109,11 @@ export class ListingsService {
    * Status defaults to DRAFT.
    */
   async createDraft(sellerId: string, dto: CreateListingDto): Promise<CreateListingResult> {
+    this.logger.log(`[START] Creating draft listing for seller=${sellerId}, title="${dto.title}", priceCents=${dto.priceCents}`);
+    
     try {
-      this.logger.log(`Creating draft listing for seller=${sellerId}`);
-
+      this.logger.debug(`[VALIDATION] Starting validation for listing data`);
+      
       // Validate category, city, and subcity
       await this.validateCategory(dto.categoryId);
       await this.validateCity(dto.cityId);
@@ -91,6 +121,8 @@ export class ListingsService {
         await this.validateSubcity(dto.subcityId, dto.cityId);
       }
 
+      this.logger.debug(`[QUERY] Creating listing in database`);
+      
       const listing = await this.prisma.listing.create({
         data: {
           sellerId,
@@ -103,22 +135,21 @@ export class ListingsService {
           attributes: dto.attributes,
           cityId: dto.cityId,
           subcityId: dto.subcityId,
-          landmark: dto.landmark,
           status: ListingStatus.DRAFT,
         },
       });
 
-      this.logger.log(`Draft listing created listing=${listing.id} seller=${sellerId}`);
+      this.logger.log(`[SUCCESS] Draft listing created: listingId=${listing.id}, sellerId=${sellerId}, status=${listing.status}`);
       return { listingId: listing.id, status: listing.status };
     } catch (error) {
       if (error instanceof NotFoundException || error instanceof BadRequestException) {
         throw error;
       }
       this.logger.error(
-        `Failed to create draft listing for seller=${sellerId}`,
+        `[ERROR] Failed to create draft listing for seller=${sellerId} - ${error instanceof Error ? error.message : 'Unknown error'}`,
         error instanceof Error ? error.stack : String(error),
       );
-      throw new BadRequestException('Failed to create listing. Please try again.');
+      throw new BadRequestException('Unable to create your listing at this time. Please check your input and try again.');
     }
   }
 
@@ -132,25 +163,32 @@ export class ListingsService {
     sellerId: string,
     dto: UpdateListingDto,
   ): Promise<ListingModel> {
+    this.logger.log(`[START] Updating listing=${listingId} by seller=${sellerId}`);
+    
     try {
-      this.logger.log(`Updating listing=${listingId} by seller=${sellerId}`);
-
+      this.logger.debug(`[QUERY] Fetching listing to verify ownership and status`);
+      
       const listing = await this.prisma.listing.findUnique({
         where: { id: listingId },
       });
 
       if (!listing) {
-        throw new NotFoundException('Listing not found');
+        this.logger.warn(`[AUTH] Listing not found: listingId=${listingId}`);
+        throw new NotFoundException(`Listing with ID ${listingId} not found.`);
       }
 
       if (listing.sellerId !== sellerId) {
-        throw new ForbiddenException('You can only update your own listings');
+        this.logger.warn(`[AUTH] Unauthorized update attempt: listingId=${listingId}, requestedBy=${sellerId}, owner=${listing.sellerId}`);
+        throw new ForbiddenException('You can only update your own listings.');
       }
 
       if (listing.status !== ListingStatus.DRAFT) {
-        throw new BadRequestException('Only draft listings can be updated');
+        this.logger.warn(`[VALIDATION] Cannot update non-draft listing: listingId=${listingId}, status=${listing.status}`);
+        throw new BadRequestException('Only draft listings can be updated. This listing has already been published or has a different status.');
       }
 
+      this.logger.debug(`[VALIDATION] Validating updated fields`);
+      
       // Validate category, city, and subcity if provided
       if ('categoryId' in dto && dto.categoryId) {
         await this.validateCategory(dto.categoryId as string);
@@ -163,12 +201,14 @@ export class ListingsService {
         await this.validateSubcity(dto.subcityId as string, cityIdToValidate);
       }
 
+      this.logger.debug(`[QUERY] Updating listing in database`);
+      
       const updated = await this.prisma.listing.update({
         where: { id: listingId },
         data: dto,
       });
 
-      this.logger.log(`Listing updated listing=${listingId} seller=${sellerId}`);
+      this.logger.log(`[SUCCESS] Listing updated: listingId=${listingId}, sellerId=${sellerId}`);
       return updated;
     } catch (error) {
       if (
@@ -179,10 +219,10 @@ export class ListingsService {
         throw error;
       }
       this.logger.error(
-        `Failed to update listing=${listingId} by seller=${sellerId}`,
+        `[ERROR] Failed to update listing=${listingId} by seller=${sellerId} - ${error instanceof Error ? error.message : 'Unknown error'}`,
         error instanceof Error ? error.stack : String(error),
       );
-      throw new BadRequestException('Failed to update listing. Please try again.');
+      throw new BadRequestException('Unable to update your listing at this time. Please try again later.');
     }
   }
 
@@ -198,23 +238,28 @@ export class ListingsService {
     sellerId: string,
     dto: PublishListingDto,
   ): Promise<PublishListingResult> {
+    this.logger.log(`[START] Publishing listing=${listingId} by seller=${sellerId}`);
+    
     try {
-      this.logger.log(`Publishing listing=${listingId} by seller=${sellerId}`);
-
+      this.logger.debug(`[QUERY] Fetching listing to verify ownership and status`);
+      
       const listing = await this.prisma.listing.findUnique({
         where: { id: listingId },
       });
 
       if (!listing) {
-        throw new NotFoundException('Listing not found');
+        this.logger.warn(`[AUTH] Listing not found: listingId=${listingId}`);
+        throw new NotFoundException(`Listing with ID ${listingId} not found.`);
       }
 
       if (listing.sellerId !== sellerId) {
-        throw new ForbiddenException('You can only publish your own listings');
+        this.logger.warn(`[AUTH] Unauthorized publish attempt: listingId=${listingId}, requestedBy=${sellerId}, owner=${listing.sellerId}`);
+        throw new ForbiddenException('You can only publish your own listings.');
       }
 
       if (listing.status !== ListingStatus.DRAFT) {
-        throw new BadRequestException('Only draft listings can be published');
+        this.logger.warn(`[VALIDATION] Cannot publish non-draft listing: listingId=${listingId}, status=${listing.status}`);
+        throw new BadRequestException('Only draft listings can be published. This listing has already been published or has a different status.');
       }
 
       // TODO: Validate at least one image when image endpoint is implemented
@@ -225,8 +270,12 @@ export class ListingsService {
       const now = new Date();
       const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
 
+      this.logger.debug(`[TRANSACTION] Starting transaction to publish listing`);
+      
       // Use transaction to ensure atomicity
       const result = await this.prisma.$transaction(async (tx) => {
+        this.logger.debug(`[TRANSACTION] Updating listing status to ACTIVE`);
+        
         // Update listing status and timestamps
         const updated = await tx.listing.update({
           where: { id: listingId },
@@ -255,7 +304,7 @@ export class ListingsService {
         return updated;
       });
 
-      this.logger.log(`Listing published listing=${listingId} seller=${sellerId}`);
+      this.logger.log(`[SUCCESS] Listing published: listingId=${listingId}, sellerId=${sellerId}, expiresAt=${expiresAt.toISOString()}`);
       return {
         listingId: result.id,
         status: result.status,
@@ -271,10 +320,10 @@ export class ListingsService {
         throw error;
       }
       this.logger.error(
-        `Failed to publish listing=${listingId} by seller=${sellerId}`,
+        `[ERROR] Failed to publish listing=${listingId} by seller=${sellerId} - ${error instanceof Error ? error.message : 'Unknown error'}`,
         error instanceof Error ? error.stack : String(error),
       );
-      throw new BadRequestException('Failed to publish listing. Please try again.');
+      throw new BadRequestException('Unable to publish your listing at this time. Please try again later.');
     }
   }
 
@@ -284,7 +333,11 @@ export class ListingsService {
    * Authenticated seller: can view their own listings (any status).
    */
   async getListing(listingId: string, sellerId?: string): Promise<ListingModel> {
+    this.logger.log(`[START] Fetching listing=${listingId} ${sellerId ? `for seller=${sellerId}` : '(public access)'}`);
+    
     try {
+      this.logger.debug(`[QUERY] Fetching listing with related data`);
+      
       const listing = await this.prisma.listing.findUnique({
         where: { id: listingId },
         include: {
@@ -307,35 +360,44 @@ export class ListingsService {
       });
 
       if (!listing) {
-        throw new NotFoundException('Listing not found');
+        this.logger.warn(`[NOT_FOUND] Listing not found: listingId=${listingId}`);
+        throw new NotFoundException(`Listing with ID ${listingId} not found.`);
       }
 
+      this.logger.debug(`[AUTH] Checking access permissions for listing=${listingId}`);
+      
       // If sellerId is provided, check ownership
       if (sellerId) {
         if (listing.sellerId !== sellerId) {
           // Not the owner, only show if active
           if (listing.status !== ListingStatus.ACTIVE) {
-            throw new NotFoundException('Listing not found');
+            this.logger.warn(`[AUTH] Access denied: listingId=${listingId}, requestedBy=${sellerId}, status=${listing.status}`);
+            throw new NotFoundException('Listing not found.');
           }
+          this.logger.debug(`[AUTH] Public access granted for active listing: listingId=${listingId}`);
         }
         // Owner can view their own listings regardless of status
+        this.logger.debug(`[AUTH] Owner access granted: listingId=${listingId}, owner=${sellerId}`);
       } else {
         // Public access - only show active listings
         if (listing.status !== ListingStatus.ACTIVE) {
-          throw new NotFoundException('Listing not found');
+          this.logger.warn(`[AUTH] Public access denied for non-active listing: listingId=${listingId}, status=${listing.status}`);
+          throw new NotFoundException('Listing not found.');
         }
+        this.logger.debug(`[AUTH] Public access granted for active listing: listingId=${listingId}`);
       }
 
+      this.logger.log(`[SUCCESS] Listing retrieved: listingId=${listingId}, title="${listing.title}", status=${listing.status}`);
       return listing;
     } catch (error) {
       if (error instanceof NotFoundException || error instanceof ForbiddenException) {
         throw error;
       }
       this.logger.error(
-        `Failed to get listing=${listingId}`,
+        `[ERROR] Failed to get listing=${listingId} - ${error instanceof Error ? error.message : 'Unknown error'}`,
         error instanceof Error ? error.stack : String(error),
       );
-      throw new BadRequestException('Failed to get listing. Please try again.');
+      throw new BadRequestException('Unable to retrieve the listing at this time. Please try again later.');
     }
   }
 
@@ -344,8 +406,12 @@ export class ListingsService {
    * Returns both draft and active listings.
    */
   async getSellerListings(sellerId: string): Promise<ListingModel[]> {
+    this.logger.log(`[START] Fetching all listings for seller=${sellerId}`);
+    
     try {
-      return await this.prisma.listing.findMany({
+      this.logger.debug(`[QUERY] Fetching listings with related data`);
+      
+      const listings = await this.prisma.listing.findMany({
         where: { sellerId },
         include: {
           images: {
@@ -357,12 +423,15 @@ export class ListingsService {
         },
         orderBy: { createdAt: 'desc' },
       });
+
+      this.logger.log(`[SUCCESS] Retrieved ${listings.length} listings for seller=${sellerId}`);
+      return listings;
     } catch (error) {
       this.logger.error(
-        `Failed to get listings for seller=${sellerId}`,
+        `[ERROR] Failed to get listings for seller=${sellerId} - ${error instanceof Error ? error.message : 'Unknown error'}`,
         error instanceof Error ? error.stack : String(error),
       );
-      throw new BadRequestException('Failed to get listings. Please try again.');
+      throw new BadRequestException('Unable to retrieve your listings at this time. Please try again later.');
     }
   }
 
@@ -374,19 +443,23 @@ export class ListingsService {
    * Sold, Reserved, and REMOVED listings cannot be deleted.
    */
   async deleteListing(listingId: string, sellerId: string): Promise<void> {
+    this.logger.log(`[START] Deleting listing=${listingId} by seller=${sellerId}`);
+    
     try {
-      this.logger.log(`Deleting listing=${listingId} by seller=${sellerId}`);
-
+      this.logger.debug(`[QUERY] Fetching listing to verify ownership and status`);
+      
       const listing = await this.prisma.listing.findUnique({
         where: { id: listingId },
       });
 
       if (!listing) {
-        throw new NotFoundException('Listing not found');
+        this.logger.warn(`[AUTH] Listing not found: listingId=${listingId}`);
+        throw new NotFoundException(`Listing with ID ${listingId} not found.`);
       }
 
       if (listing.sellerId !== sellerId) {
-        throw new ForbiddenException('You can only delete your own listings');
+        this.logger.warn(`[AUTH] Unauthorized delete attempt: listingId=${listingId}, requestedBy=${sellerId}, owner=${listing.sellerId}`);
+        throw new ForbiddenException('You can only delete your own listings.');
       }
 
       // Prevent deletion of listings with final statuses
@@ -396,23 +469,28 @@ export class ListingsService {
         ListingStatus.REMOVED,
       ];
       if (finalStatuses.includes(listing.status as ListingStatus)) {
+        this.logger.warn(`[VALIDATION] Cannot delete listing with final status: listingId=${listingId}, status=${listing.status}`);
         throw new BadRequestException(
-          `Cannot delete listing with status ${listing.status}. Only draft, active, and expired listings can be deleted.`,
+          `Cannot delete listing with status "${listing.status}". Listings that are sold, reserved, or already removed cannot be deleted. Only draft, active, and expired listings can be deleted.`,
         );
       }
 
+      this.logger.debug(`[ACTION] Determining delete type based on status: listingId=${listingId}, status=${listing.status}`);
+      
       // Soft delete for active and expired listings, hard delete for drafts
       if (listing.status === ListingStatus.ACTIVE || listing.status === ListingStatus.EXPIRED) {
+        this.logger.debug(`[ACTION] Performing soft delete (status to REMOVED): listingId=${listingId}`);
         await this.prisma.listing.update({
           where: { id: listingId },
           data: { status: ListingStatus.REMOVED },
         });
-        this.logger.log(`Listing soft deleted (status to REMOVED) listing=${listingId} seller=${sellerId}`);
+        this.logger.log(`[SUCCESS] Listing soft deleted: listingId=${listingId}, sellerId=${sellerId}, previousStatus=${listing.status}`);
       } else {
+        this.logger.debug(`[ACTION] Performing hard delete: listingId=${listingId}`);
         await this.prisma.listing.delete({
           where: { id: listingId },
         });
-        this.logger.log(`Listing hard deleted listing=${listingId} seller=${sellerId}`);
+        this.logger.log(`[SUCCESS] Listing hard deleted: listingId=${listingId}, sellerId=${sellerId}`);
       }
     } catch (error) {
       if (
@@ -423,10 +501,10 @@ export class ListingsService {
         throw error;
       }
       this.logger.error(
-        `Failed to delete listing=${listingId} by seller=${sellerId}`,
+        `[ERROR] Failed to delete listing=${listingId} by seller=${sellerId} - ${error instanceof Error ? error.message : 'Unknown error'}`,
         error instanceof Error ? error.stack : String(error),
       );
-      throw new BadRequestException('Failed to delete listing. Please try again.');
+      throw new BadRequestException('Unable to delete your listing at this time. Please try again later.');
     }
   }
 }

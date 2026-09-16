@@ -1,4 +1,4 @@
-import { IsEnum, IsInt, IsJSON, IsNotEmpty, IsOptional, IsString, IsUUID, Min } from 'class-validator';
+import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Min, IsObject } from 'class-validator';
 import { ListingCondition } from '../../generated/prisma/enums.js';
 
 /** DTO for creating a new listing draft */
@@ -22,7 +22,7 @@ export class CreateListingDto {
   isNegotiable?: boolean;
 
   @IsOptional()
-  @IsJSON()
+  @IsObject()
   attributes?: Record<string, any>;
 
   @IsUUID()
@@ -33,8 +33,8 @@ export class CreateListingDto {
   @IsNotEmpty()
   cityId: string;
 
-  @IsOptional()
   @IsUUID()
+  @IsOptional()
   subcityId?: string;
 
   @IsOptional()
