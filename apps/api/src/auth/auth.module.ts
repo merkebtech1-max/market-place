@@ -33,5 +33,6 @@ const otpProviderFactory: Provider = {
   ],
   controllers: [AuthController],
   providers: [AuthService, OtpService, JwtTokenService, JwtStrategy, otpProviderFactory],
+  exports: [JwtStrategy, PassportModule, JwtTokenService, JwtModule],
 })
 export class AuthModule {}

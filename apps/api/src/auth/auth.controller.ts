@@ -27,13 +27,15 @@ export class AuthController {
     @Headers('cf-connecting-ip') cfIp?: string,
     @Headers('x-forwarded-for') xff?: string,
   ) {
+    this.logger.log(`[REQUEST] POST /auth/otp/request - OTP request for phone=${dto.phone}`);
+
     try {
-      this.logger.log(`OTP request initiated for phone=${dto.phone}`);
       await this.otpService.requestOtp(dto.phone, hashIp(cfIp, xff));
-      this.logger.log(`OTP sent successfully for phone=${dto.phone}`);
+
+      this.logger.log(`[RESPONSE] POST /auth/otp/request - OTP sent successfully for phone=${dto.phone}`);
       return { success: true, message: 'OTP sent successfully' };
     } catch (error) {
-      this.logger.error(`OTP request failed for phone=${dto.phone}`, error instanceof Error ? error.stack : String(error));
+      this.logger.error(`[ERROR] POST /auth/otp/request - Request failed for phone=${dto.phone} - ${error instanceof Error ? error.message : 'Unknown error'}`, error instanceof Error ? error.stack : String(error));
       throw error;
     }
   }
@@ -46,8 +48,9 @@ export class AuthController {
     @Headers('cf-connecting-ip') cfIp?: string,
     @Headers('x-forwarded-for') xff?: string,
   ) {
+    this.logger.log(`[REQUEST] POST /auth/register - Registration attempt for phone=${dto.phone}, displayName="${dto.displayName}"`);
+
     try {
-      this.logger.log(`Registration attempt for phone=${dto.phone} displayName=${dto.displayName}`);
       const result = await this.authService.register(
         dto.phone,
         dto.code,
@@ -58,7 +61,8 @@ export class AuthController {
         userAgent,
         hashIp(cfIp, xff),
       );
-      this.logger.log(`Registration successful for userId=${result.userId}`);
+
+      this.logger.log(`[RESPONSE] POST /auth/register - Registration successful: userId=${result.userId}, phone=${dto.phone}`);
       return {
         success: true,
         message: 'Account created successfully',
@@ -66,7 +70,7 @@ export class AuthController {
         tokens: result.tokens,
       };
     } catch (error) {
-      this.logger.error(`Registration failed for phone=${dto.phone}`, error instanceof Error ? error.stack : String(error));
+      this.logger.error(`[ERROR] POST /auth/register - Request failed for phone=${dto.phone} - ${error instanceof Error ? error.message : 'Unknown error'}`, error instanceof Error ? error.stack : String(error));
       throw error;
     }
   }
@@ -79,15 +83,17 @@ export class AuthController {
     @Headers('cf-connecting-ip') cfIp?: string,
     @Headers('x-forwarded-for') xff?: string,
   ) {
+    this.logger.log(`[REQUEST] POST /auth/login - Login attempt for phone=${dto.phone}`);
+
     try {
-      this.logger.log(`Login attempt for phone=${dto.phone}`);
       const result = await this.authService.login(
         dto.phone,
         dto.code,
         userAgent,
         hashIp(cfIp, xff),
       );
-      this.logger.log(`Login successful for userId=${result.userId}`);
+
+      this.logger.log(`[RESPONSE] POST /auth/login - Login successful: userId=${result.userId}, phone=${dto.phone}`);
       return {
         success: true,
         message: 'Logged in successfully',
@@ -95,7 +101,7 @@ export class AuthController {
         tokens: result.tokens,
       };
     } catch (error) {
-      this.logger.error(`Login failed for phone=${dto.phone}`, error instanceof Error ? error.stack : String(error));
+      this.logger.error(`[ERROR] POST /auth/login - Request failed for phone=${dto.phone} - ${error instanceof Error ? error.message : 'Unknown error'}`, error instanceof Error ? error.stack : String(error));
       throw error;
     }
   }
@@ -107,13 +113,15 @@ export class AuthController {
   @Post('logout')
   @UseGuards(AuthGuard('jwt'))
   async logout(@CurrentUser() user: TokenPayload) {
+    this.logger.log(`[REQUEST] POST /auth/logout - Logout attempt for userId=${user.sub}, sessionId=${user.sessionId}`);
+
     try {
-      this.logger.log(`Logout attempt for userId=${user.sub} sessionId=${user.sessionId}`);
       await this.authService.logout(user.sessionId);
-      this.logger.log(`Logout successful for userId=${user.sub} sessionId=${user.sessionId}`);
+
+      this.logger.log(`[RESPONSE] POST /auth/logout - Logout successful: userId=${user.sub}, sessionId=${user.sessionId}`);
       return { success: true, message: 'Logged out successfully' };
     } catch (error) {
-      this.logger.error(`Logout failed for userId=${user.sub} sessionId=${user.sessionId}`, error instanceof Error ? error.stack : String(error));
+      this.logger.error(`[ERROR] POST /auth/logout - Request failed for userId=${user.sub}, sessionId=${user.sessionId} - ${error instanceof Error ? error.message : 'Unknown error'}`, error instanceof Error ? error.stack : String(error));
       throw error;
     }
   }
@@ -121,10 +129,12 @@ export class AuthController {
   /** Refreshes access token using a valid refresh token */
   @Post('refresh')
   async refresh(@Body() dto: RefreshDto) {
+    this.logger.log(`[REQUEST] POST /auth/refresh - Token refresh attempt`);
+
     try {
-      this.logger.log('Token refresh attempt');
       const result = await this.authService.refreshTokens(dto.refreshToken);
-      this.logger.log(`Token refresh successful for userId=${result.userId}`);
+
+      this.logger.log(`[RESPONSE] POST /auth/refresh - Token refresh successful: userId=${result.userId}`);
       return {
         success: true,
         message: 'Tokens refreshed successfully',
@@ -132,7 +142,7 @@ export class AuthController {
         tokens: result.tokens,
       };
     } catch (error) {
-      this.logger.error('Token refresh failed', error instanceof Error ? error.stack : String(error));
+      this.logger.error(`[ERROR] POST /auth/refresh - Request failed - ${error instanceof Error ? error.message : 'Unknown error'}`, error instanceof Error ? error.stack : String(error));
       throw error;
     }
   }

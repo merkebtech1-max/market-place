@@ -35,27 +35,33 @@ export class AuthService {
    * Throws NotFoundException if no account exists for the phone — caller should register first.
    */
   async login(phone: string, code: string, userAgent?: string, ipHash?: string): Promise<AuthResult> {
+    this.logger.log(`[START] Login attempt for phone=${phone}`);
+
     try {
-      this.logger.log(`Login attempt for phone=${phone}`);
+      this.logger.debug(`[VALIDATION] Verifying OTP for phone=${phone}`);
       await this.otpService.verifyAndConsumeOtp(phone, code);
 
+      this.logger.debug(`[QUERY] Fetching user by phone=${phone}`);
       const user = await this.prisma.user.findUnique({ where: { phone } });
       if (!user) {
-        this.logger.warn(`User not found for phone=${phone}`);
+        this.logger.warn(`[AUTH] User not found for phone=${phone}`);
         throw new NotFoundException('No account found for this number. Please register first.');
       }
 
+      this.logger.debug(`[SESSION] Creating session for userId=${user.id}`);
       const { session, refreshToken } = await this.createSession(user.id, userAgent, ipHash);
+
+      this.logger.debug(`[TOKEN] Generating access token for userId=${user.id}, sessionId=${session.id}`);
       const accessToken = await this.jwtTokenService.generateAccessToken(user.id, user.phone, session.id);
 
-      this.logger.log(`Login successful user=${user.id} session=${session.id}`);
+      this.logger.log(`[SUCCESS] Login successful: userId=${user.id}, phone=${phone}, sessionId=${session.id}`);
       return { userId: user.id, tokens: { accessToken, refreshToken } };
     } catch (error) {
       if (error instanceof NotFoundException || error instanceof UnauthorizedException) {
         throw error;
       }
-      this.logger.error(`Login failed for phone=${phone}`, error instanceof Error ? error.stack : String(error));
-      throw new InternalServerErrorException('Login failed. Please try again.');
+      this.logger.error(`[ERROR] Login failed for phone=${phone} - ${error instanceof Error ? error.message : 'Unknown error'}`, error instanceof Error ? error.stack : String(error));
+      throw new InternalServerErrorException('Unable to complete login at this time. Please try again later.');
     }
   }
 
@@ -74,16 +80,20 @@ export class AuthService {
     userAgent?: string,
     ipHash?: string,
   ): Promise<AuthResult> {
+    this.logger.log(`[START] Registration attempt for phone=${phone}, displayName="${displayName}"`);
+
     try {
-      this.logger.log(`Registration attempt for phone=${phone} displayName=${displayName}`);
+      this.logger.debug(`[VALIDATION] Checking if user already exists for phone=${phone}`);
       const existing = await this.prisma.user.findUnique({ where: { phone } });
       if (existing) {
-        this.logger.warn(`User already exists for phone=${phone}`);
+        this.logger.warn(`[AUTH] User already exists for phone=${phone}, userId=${existing.id}`);
         throw new ConflictException('An account with this phone number already exists. Please log in instead.');
       }
 
+      this.logger.debug(`[VALIDATION] Verifying OTP for phone=${phone}`);
       await this.otpService.verifyAndConsumeOtp(phone, code);
 
+      this.logger.debug(`[QUERY] Creating new user in database`);
       let user: UserModel;
       try {
         user = await this.prisma.user.create({
@@ -92,24 +102,29 @@ export class AuthService {
       } catch (error: any) {
         // P2002 = Prisma unique constraint violation
         if (error?.code === 'P2002') {
+          this.logger.warn(`[AUTH] Duplicate phone constraint violation: phone=${phone}`);
           throw new ConflictException('An account with this phone number already exists. Please log in instead.');
         }
-        this.logger.error(`Failed to create user for phone=${phone}`, error instanceof Error ? error.stack : String(error));
-        throw new InternalServerErrorException('Registration failed. Please try again.');
+        this.logger.error(`[ERROR] Failed to create user for phone=${phone} - ${error instanceof Error ? error.message : 'Unknown error'}`, error instanceof Error ? error.stack : String(error));
+        throw new InternalServerErrorException('Unable to create your account at this time. Please try again later.');
       }
 
-      this.logger.log(`User registered user=${user.id}`);
+      this.logger.log(`[USER] User created successfully: userId=${user.id}, phone=${phone}`);
 
+      this.logger.debug(`[SESSION] Creating session for userId=${user.id}`);
       const { session, refreshToken } = await this.createSession(user.id, userAgent, ipHash);
+
+      this.logger.debug(`[TOKEN] Generating access token for userId=${user.id}, sessionId=${session.id}`);
       const accessToken = await this.jwtTokenService.generateAccessToken(user.id, user.phone, session.id);
 
+      this.logger.log(`[SUCCESS] Registration successful: userId=${user.id}, phone=${phone}, sessionId=${session.id}`);
       return { userId: user.id, tokens: { accessToken, refreshToken } };
     } catch (error) {
       if (error instanceof ConflictException || error instanceof UnauthorizedException) {
         throw error;
       }
-      this.logger.error(`Registration failed for phone=${phone}`, error instanceof Error ? error.stack : String(error));
-      throw new InternalServerErrorException('Registration failed. Please try again.');
+      this.logger.error(`[ERROR] Registration failed for phone=${phone} - ${error instanceof Error ? error.message : 'Unknown error'}`, error instanceof Error ? error.stack : String(error));
+      throw new InternalServerErrorException('Unable to complete registration at this time. Please try again later.');
     }
   }
 
@@ -119,20 +134,23 @@ export class AuthService {
    * not from the request body.
    */
   async logout(sessionId: string): Promise<void> {
+    this.logger.log(`[START] Logout attempt for sessionId=${sessionId}`);
+
     try {
+      this.logger.debug(`[QUERY] Revoking session in database: sessionId=${sessionId}`);
       await this.prisma.session.update({
         where: { id: sessionId },
         data: { revokedAt: new Date() },
       });
-      this.logger.log(`Session revoked session=${sessionId}`);
+      this.logger.log(`[SUCCESS] Session revoked: sessionId=${sessionId}`);
     } catch (error: any) {
       // P2025 = Prisma record not found error
       if (error?.code === 'P2025') {
-        this.logger.warn(`Session not found for logout sessionId=${sessionId}`);
+        this.logger.warn(`[NOT_FOUND] Session not found for logout: sessionId=${sessionId}`);
         return;
       }
-      this.logger.error(`Failed to revoke session=${sessionId}`, error instanceof Error ? error.stack : String(error));
-      throw new InternalServerErrorException('Failed to logout. Please try again later.');
+      this.logger.error(`[ERROR] Failed to revoke session=${sessionId} - ${error instanceof Error ? error.message : 'Unknown error'}`, error instanceof Error ? error.stack : String(error));
+      throw new InternalServerErrorException('Unable to complete logout at this time. Please try again later.');
     }
   }
 
@@ -142,81 +160,87 @@ export class AuthService {
    * verifies the token hash, and issues new tokens with rotation.
    */
   async refreshTokens(refreshToken: string): Promise<AuthResult> {
-    try {
-      this.logger.log('Token refresh attempt');
+    this.logger.log(`[START] Token refresh attempt`);
 
-      // Extract sessionId from refresh token
+    try {
+      this.logger.debug(`[TOKEN] Extracting sessionId from refresh token`);
       const sessionId = this.jwtTokenService.extractSessionIdFromRefreshToken(refreshToken);
       if (!sessionId) {
-        this.logger.warn('Refresh token does not contain sessionId');
+        this.logger.warn(`[VALIDATION] Refresh token does not contain sessionId`);
         throw new UnauthorizedException('Invalid refresh token format');
       }
 
-      // Find session by sessionId
+      this.logger.debug(`[QUERY] Fetching session: sessionId=${sessionId}`);
       const session = await this.prisma.session.findUnique({
         where: { id: sessionId },
       });
 
       if (!session) {
-        this.logger.warn(`Session not found for sessionId=${sessionId}`);
+        this.logger.warn(`[AUTH] Session not found: sessionId=${sessionId}`);
         throw new UnauthorizedException('Invalid refresh token');
       }
 
       if (session.revokedAt) {
-        this.logger.warn(`Attempted to use revoked session=${session.id}`);
+        this.logger.warn(`[AUTH] Attempted to use revoked session: sessionId=${sessionId}, revokedAt=${session.revokedAt.toISOString()}`);
         throw new UnauthorizedException('Session has been revoked');
       }
 
       if (session.expiresAt < new Date()) {
-        this.logger.warn(`Attempted to use expired session=${session.id}`);
+        this.logger.warn(`[AUTH] Attempted to use expired session: sessionId=${sessionId}, expiresAt=${session.expiresAt.toISOString()}`);
         throw new UnauthorizedException('Refresh token has expired');
       }
 
-      // Verify the hash of the random part
+      this.logger.debug(`[VALIDATION] Verifying refresh token hash`);
       const randomPart = this.jwtTokenService.getRefreshTokenRandomPart(refreshToken);
       const isValid = this.jwtTokenService.verifyRefreshTokenHash(randomPart, session.refreshTokenHash);
       if (!isValid) {
-        this.logger.warn(`Invalid refresh token hash for session=${session.id}`);
+        this.logger.warn(`[AUTH] Invalid refresh token hash: sessionId=${sessionId}`);
         throw new UnauthorizedException('Invalid refresh token');
       }
 
+      this.logger.debug(`[QUERY] Fetching user for session: userId=${session.userId}`);
       const user = await this.prisma.user.findUnique({ where: { id: session.userId } });
       if (!user) {
-        this.logger.error(`User not found for session=${session.id}`);
+        this.logger.error(`[ERROR] User not found for session: sessionId=${sessionId}, userId=${session.userId}`);
         throw new InternalServerErrorException('User not found');
       }
 
-      // Generate new refresh token with same sessionId (rotation)
+      this.logger.debug(`[TOKEN] Generating new refresh token with rotation: sessionId=${sessionId}`);
       const newRefreshToken = this.jwtTokenService.generateRefreshToken(session.id);
       const newRefreshTokenHash = this.jwtTokenService.hashRefreshTokenRandomPart(newRefreshToken);
       const newExpiresAt = this.jwtTokenService.getRefreshTokenExpiry();
 
+      this.logger.debug(`[QUERY] Updating session with new refresh token: sessionId=${sessionId}`);
       await this.prisma.session.update({
         where: { id: session.id },
         data: { refreshTokenHash: newRefreshTokenHash, expiresAt: newExpiresAt },
       });
 
+      this.logger.debug(`[TOKEN] Generating new access token: userId=${user.id}, sessionId=${sessionId}`);
       const accessToken = await this.jwtTokenService.generateAccessToken(user.id, user.phone, session.id);
 
-      this.logger.log(`Tokens refreshed for user=${user.id} session=${session.id}`);
+      this.logger.log(`[SUCCESS] Tokens refreshed: userId=${user.id}, sessionId=${sessionId}, newExpiresAt=${newExpiresAt.toISOString()}`);
       return { userId: user.id, tokens: { accessToken, refreshToken: newRefreshToken } };
     } catch (error) {
       if (error instanceof UnauthorizedException || error instanceof InternalServerErrorException) {
         throw error;
       }
-      this.logger.error('Token refresh failed', error instanceof Error ? error.stack : String(error));
-      throw new InternalServerErrorException('Token refresh failed. Please try again.');
+      this.logger.error(`[ERROR] Token refresh failed - ${error instanceof Error ? error.message : 'Unknown error'}`, error instanceof Error ? error.stack : String(error));
+      throw new InternalServerErrorException('Unable to refresh your tokens at this time. Please try again later.');
     }
   }
 
   /** Creates a session row with a hashed refresh token and returns both the session and raw token */
   private async createSession(userId: string, userAgent?: string, ipHash?: string) {
+    this.logger.debug(`[SESSION] Creating session for userId=${userId}`);
+
     try {
-      // Generate UUID manually to avoid chicken-and-egg problem with refresh token
+      this.logger.debug(`[TOKEN] Generating sessionId and refresh token`);
       const sessionId = randomUUID();
       const refreshToken = this.jwtTokenService.generateRefreshToken(sessionId);
       const refreshTokenHash = this.jwtTokenService.hashRefreshTokenRandomPart(refreshToken);
 
+      this.logger.debug(`[QUERY] Creating session in database: sessionId=${sessionId}, userId=${userId}`);
       const session = await this.prisma.session.create({
         data: {
           id: sessionId,
@@ -228,11 +252,11 @@ export class AuthService {
         },
       });
 
-      this.logger.log(`Session created session=${session.id} user=${userId}`);
+      this.logger.log(`[SUCCESS] Session created: sessionId=${session.id}, userId=${userId}, expiresAt=${session.expiresAt.toISOString()}`);
       return { session, refreshToken };
     } catch (error) {
-      this.logger.error(`Failed to create session for user=${userId}`, error instanceof Error ? error.stack : String(error));
-      throw new InternalServerErrorException('Failed to create session. Please try again.');
+      this.logger.error(`[ERROR] Failed to create session for userId=${userId} - ${error instanceof Error ? error.message : 'Unknown error'}`, error instanceof Error ? error.stack : String(error));
+      throw new InternalServerErrorException('Unable to create session at this time. Please try again later.');
     }
   }
 }

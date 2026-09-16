@@ -95,6 +95,15 @@ export class JwtTokenService {
     return parts.length >= 2 ? parts[0] : undefined;
   }
 
+  /** Verifies an access token and returns its payload */
+  async verifyAccessToken(token: string): Promise<TokenPayload> {
+    try {
+      return await this.jwtService.verifyAsync<TokenPayload>(token);
+    } catch {
+      throw new UnauthorizedException('Invalid or expired access token');
+    }
+  }
+
   /** Returns the expiry Date for a refresh token based on config */
   getRefreshTokenExpiry(): Date {
     const days = this.config.get<number>('REFRESH_TOKEN_EXPIRY_DAYS', 7);
