@@ -12,12 +12,12 @@ import { TokenPayload } from '../jwt/jwt-token.service.js';
  * }
  */
 export const CurrentUser = createParamDecorator(
-  (data: keyof TokenPayload | undefined, ctx: ExecutionContext): TokenPayload | string => {
+  (data: keyof TokenPayload | undefined, ctx: ExecutionContext): TokenPayload | string | undefined => {
     const request = ctx.switchToHttp().getRequest();
-    const user = request.user as TokenPayload;
+    const user = request.user as TokenPayload | undefined;
 
     if (!user) {
-      throw new Error('No user found in request - make sure JwtAuthGuard is applied');
+      return undefined;
     }
 
     // If a specific field is requested (e.g., @CurrentUser('sub')), return just that field
