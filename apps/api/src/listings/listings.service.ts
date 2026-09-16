@@ -9,9 +9,9 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { CreateListingDto } from './dto/create-listing.dto.js';
 import { UpdateListingDto } from './dto/update-listing.dto.js';
 import { PublishListingDto } from './dto/publish-listing.dto.js';
-import { ListingStatus } from '../generated/prisma/enums/ListingStatus.js';
+import { ListingStatus } from '../generated/prisma/enums.js';
 import { ListingModel } from '../generated/prisma/models/Listing.js';
-import { LocationType } from '../generated/prisma/enums/LocationType.js';
+import { LocationType } from '../generated/prisma/enums.js';
 
 /** Result returned when creating a listing */
 export interface CreateListingResult {
@@ -152,16 +152,15 @@ export class ListingsService {
       }
 
       // Validate category, city, and subcity if provided
-      if (dto.categoryId) {
-        await this.validateCategory(dto.categoryId);
+      if ('categoryId' in dto && dto.categoryId) {
+        await this.validateCategory(dto.categoryId as string);
       }
-      if (dto.cityId) {
-        await this.validateCity(dto.cityId);
+      if ('cityId' in dto && dto.cityId) {
+        await this.validateCity(dto.cityId as string);
       }
-      if (dto.subcityId) {
-        // Use the provided cityId or fall back to the existing listing's cityId
-        const cityIdToValidate = dto.cityId || listing.cityId;
-        await this.validateSubcity(dto.subcityId, cityIdToValidate);
+      if ('subcityId' in dto && dto.subcityId) {
+        const cityIdToValidate = ('cityId' in dto && dto.cityId) ? dto.cityId as string : listing.cityId;
+        await this.validateSubcity(dto.subcityId as string, cityIdToValidate);
       }
 
       const updated = await this.prisma.listing.update({
@@ -391,12 +390,12 @@ export class ListingsService {
       }
 
       // Prevent deletion of listings with final statuses
-      const finalStatuses = [
+      const finalStatuses: ListingStatus[] = [
         ListingStatus.SOLD,
         ListingStatus.RESERVED,
         ListingStatus.REMOVED,
       ];
-      if (finalStatuses.includes(listing.status)) {
+      if (finalStatuses.includes(listing.status as ListingStatus)) {
         throw new BadRequestException(
           `Cannot delete listing with status ${listing.status}. Only draft, active, and expired listings can be deleted.`,
         );

@@ -1,4 +1,4 @@
-import { IsArray, IsUUID, ValidateNested } from 'class-validator';
+import { IsArray, IsOptional, IsUUID, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 
 /** DTO for listing image during publish */

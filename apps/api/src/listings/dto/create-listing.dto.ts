@@ -1,5 +1,5 @@
 import { IsEnum, IsInt, IsJSON, IsNotEmpty, IsOptional, IsString, IsUUID, Min } from 'class-validator';
-import { ListingCondition } from '../../../generated/prisma/enums/ListingCondition.js';
+import { ListingCondition } from '../../generated/prisma/enums.js';
 
 /** DTO for creating a new listing draft */
 export class CreateListingDto {
