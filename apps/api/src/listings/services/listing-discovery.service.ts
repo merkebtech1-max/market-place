@@ -4,7 +4,7 @@ import { ListingQueryDto, ListingSort } from '../dto/listing-query.dto.js';
 import { ListingCondition, ListingStatus, UserStatus } from '../../generated/prisma/enums.js';
 import { ListingSearchService, PaginatedListings } from './listing-search.service.js';
 import { ListingFeedService } from './listing-feed.service.js';
-import { toListingCard, ListingCardRow } from './listing-card.mapper.js';
+import { LISTING_CARD_SELECT, ListingCardRow, toListingCard } from './listing-card.mapper.js';
 
 @Injectable()
 export class ListingDiscoveryService {
@@ -14,7 +14,7 @@ export class ListingDiscoveryService {
     private readonly feed: ListingFeedService,
   ) {}
 
-  async getListings(query: ListingQueryDto, feedIdentity?: string): Promise<PaginatedListings> {
+  async getListings(query: ListingQueryDto, feedIdentity?: string, currentUserId?: string): Promise<PaginatedListings> {
     const { page, limit, minPrice, maxPrice, condition, negotiable, search, category, city, subcity, sort } = query;
     const now = new Date();
     const normalizedSearch = search?.trim();
@@ -64,7 +64,7 @@ export class ListingDiscoveryService {
     if (normalizedSearch && normalizedSearch.length >= 2) {
       return this.search.searchListings(normalizedSearch, {
         page, limit, now, categoryIds, cityId, subcityId, minPrice, maxPrice, condition, negotiable, sort,
-      });
+      }, currentUserId);
     }
 
     // Stage 6: deterministic feed variety — only for the pure discovery feed
@@ -74,7 +74,7 @@ export class ListingDiscoveryService {
     const isDefaultFeed = sort === undefined;
     if (isDefaultFeed && feedIdentity) {
       return this.getFeedListings({
-        page, limit, now, identity: feedIdentity,
+        page, limit, now, identity: feedIdentity, currentUserId,
         categoryIds, cityId, subcityId, minPrice, maxPrice, condition, negotiable,
       });
     }
@@ -104,9 +104,23 @@ export class ListingDiscoveryService {
       }),
     ]);
 
-    const data = rows.map((row) => toListingCard(row));
+    const savedIds = await this.getSavedSet(currentUserId, rows.map((row) => row.id));
+    const data = rows.map((row) => toListingCard(row, savedIds.has(row.id)));
 
     return { data, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
+  }
+
+  /**
+   * One batch query for the whole page: returns the set of listingIds the current
+   * user has saved. Anonymous requests (no userId) skip the query entirely.
+   */
+  private async getSavedSet(userId: string | undefined, listingIds: string[]): Promise<Set<string>> {
+    if (!userId || listingIds.length === 0) return new Set<string>();
+    const saved = await this.prisma.savedListing.findMany({
+      where: { userId, listingId: { in: listingIds } },
+      select: { listingId: true },
+    });
+    return new Set(saved.map((row) => row.listingId));
   }
 
   /**
@@ -119,6 +133,7 @@ export class ListingDiscoveryService {
     limit: number;
     now: Date;
     identity: string;
+    currentUserId?: string;
     categoryIds?: string[];
     cityId?: string;
     subcityId?: string;
@@ -127,7 +142,7 @@ export class ListingDiscoveryService {
     condition?: ListingCondition;
     negotiable?: boolean;
   }): Promise<PaginatedListings> {
-    const { page, limit, now, identity, categoryIds, cityId, subcityId, minPrice, maxPrice, condition, negotiable } = args;
+    const { page, limit, now, identity, currentUserId, categoryIds, cityId, subcityId, minPrice, maxPrice, condition, negotiable } = args;
     const seed = this.feed.buildFeedSeed(identity, now);
     const offset = (page - 1) * limit;
 
@@ -135,15 +150,15 @@ export class ListingDiscoveryService {
     const filterClauses: string[] = [];
     if (categoryIds) {
       params.push(categoryIds);
-      filterClauses.push(`l."categoryId" = ANY(CAST($${params.length} AS uuid[]))`);
+      filterClauses.push(`l."categoryId" = ANY(CAST($${params.length} AS text[]))`);
     }
     if (cityId) {
       params.push(cityId);
-      filterClauses.push(`l."cityId" = CAST($${params.length} AS uuid)`);
+      filterClauses.push(`l."cityId" = CAST($${params.length} AS text)`);
     }
     if (subcityId) {
       params.push(subcityId);
-      filterClauses.push(`l."subcityId" = CAST($${params.length} AS uuid)`);
+      filterClauses.push(`l."subcityId" = CAST($${params.length} AS text)`);
     }
     if (minPrice !== undefined) {
       params.push(minPrice);
@@ -193,11 +208,12 @@ export class ListingDiscoveryService {
       select: LISTING_CARD_SELECT,
     });
 
+    const savedIds = await this.getSavedSet(currentUserId, fetched.map((row) => row.id));
     const byId = new Map(fetched.map((row) => [row.id, row]));
     const data = idOrder
       .map((id) => byId.get(id))
       .filter((row): row is ListingCardRow => row !== undefined)
-      .map((row) => toListingCard(row));
+      .map((row) => toListingCard(row, savedIds.has(row.id)));
 
     return { data, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
   }

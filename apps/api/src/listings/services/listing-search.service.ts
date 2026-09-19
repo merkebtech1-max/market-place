@@ -88,7 +88,7 @@ export class ListingSearchService {
     return { cityId, subcityId };
   }
 
-  async searchListings(search: string, opts: SearchFilters): Promise<PaginatedListings> {
+  async searchListings(search: string, opts: SearchFilters, currentUserId?: string): Promise<PaginatedListings> {
     const { page, limit, now, categoryIds, cityId, subcityId, minPrice, maxPrice, condition, negotiable, sort } = opts;
     const SIMILARITY_THRESHOLD = 0.20;
     const offset = (page - 1) * limit;
@@ -98,15 +98,15 @@ export class ListingSearchService {
 
     if (categoryIds) {
       params.push(categoryIds);
-      filterClauses.push(`l."categoryId" = ANY(CAST($${params.length} AS uuid[]))`);
+      filterClauses.push(`l."categoryId" = ANY(CAST($${params.length} AS text[]))`);
     }
     if (cityId) {
       params.push(cityId);
-      filterClauses.push(`l."cityId" = CAST($${params.length} AS uuid)`);
+      filterClauses.push(`l."cityId" = CAST($${params.length} AS text)`);
     }
     if (subcityId) {
       params.push(subcityId);
-      filterClauses.push(`l."subcityId" = CAST($${params.length} AS uuid)`);
+      filterClauses.push(`l."subcityId" = CAST($${params.length} AS text)`);
     }
     if (minPrice !== undefined) {
       params.push(minPrice);
@@ -203,6 +203,17 @@ export class ListingSearchService {
 
     const total = rows.length > 0 ? parseInt(rows[0].total, 10) : 0;
 
+    // One batch query for the whole page — check which of this page's listings
+    // the current user has saved. Anonymous requests skip the query entirely.
+    let savedIds = new Set<string>();
+    if (currentUserId && rows.length > 0) {
+      const saved = await this.prisma.savedListing.findMany({
+        where: { userId: currentUserId, listingId: { in: rows.map((row) => row.id) } },
+        select: { listingId: true },
+      });
+      savedIds = new Set(saved.map((row) => row.listingId));
+    }
+
     const data: ListingCard[] = rows.map((row) => ({
       id: row.id,
       title: row.title,
@@ -220,6 +231,7 @@ export class ListingSearchService {
         id: row.sellerId, displayName: row.sellerDisplayName, avatarKey: row.sellerAvatarKey,
         ratingAvg: String(row.sellerRatingAvg), ratingCount: Number(row.sellerRatingCount),
       },
+      isSaved: savedIds.has(row.id),
     }));
 
     return { data, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };

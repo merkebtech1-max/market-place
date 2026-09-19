@@ -21,7 +21,7 @@ export const LISTING_CARD_SELECT = {
 
 export type ListingCardRow = Prisma.ListingGetPayload<{ select: typeof LISTING_CARD_SELECT }>;
 
-export function toListingCard(row: ListingCardRow): ListingCard {
+export function toListingCard(row: ListingCardRow, isSaved: boolean): ListingCard {
   return {
     id: row.id,
     title: row.title,
@@ -34,5 +34,6 @@ export function toListingCard(row: ListingCardRow): ListingCard {
     city: row.city,
     subcity: row.subcity,
     seller: { ...row.seller, ratingAvg: row.seller.ratingAvg.toString() },
+    isSaved,
   };
 }

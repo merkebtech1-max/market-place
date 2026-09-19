@@ -41,4 +41,5 @@ export class ListingCard {
   city: ListingCardLocation;
   subcity: ListingCardLocation | null;
   seller: ListingCardSeller;
+  isSaved: boolean;
 }

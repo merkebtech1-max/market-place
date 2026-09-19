@@ -20,6 +20,7 @@ import { CreateListingDto } from './dto/create-listing.dto.js';
 import { UpdateListingDto } from './dto/update-listing.dto.js';
 import { PublishListingDto } from './dto/publish-listing.dto.js';
 import { ListingQueryDto } from './dto/listing-query.dto.js';
+import { PaginationDto } from './dto/pagination.dto.js';
 import { ReorderListingImagesDto } from './dto/reorder-listing-images.dto.js';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 import { JwtTokenService } from '../auth/jwt/jwt-token.service.js';
@@ -57,19 +58,17 @@ export class ListingsController {
     @Headers('authorization') authHeader?: string,
   ) {
     this.logger.log(`[REQUEST] GET /listings - page=${query.page}, limit=${query.limit}`);
-    let feedIdentity: string | undefined;
+    let currentUserId: string | undefined;
     if (authHeader?.startsWith('Bearer ')) {
       try {
         const payload = await this.jwtTokenService.verifyAccessToken(authHeader.slice(7));
-        feedIdentity = payload.sub;
+        currentUserId = payload.sub;
       } catch {
         // invalid/expired token — fall through to anonymous handling
       }
     }
-    if (!feedIdentity) {
-      feedIdentity = query.feedSeed;
-    }
-    const result = await this.discoveryService.getListings(query, feedIdentity);
+    const feedIdentity = currentUserId ?? query.feedSeed;
+    const result = await this.discoveryService.getListings(query, feedIdentity, currentUserId);
     this.logger.log(`[RESPONSE] GET /listings - total=${result.meta.total}, page=${result.meta.page}`);
     return result;
   }
@@ -120,7 +119,7 @@ export class ListingsController {
 
   @Get('saved')
   @UseGuards(AuthGuard('jwt'))
-  async getSavedListings(@Query() query: ListingQueryDto, @CurrentUser() user: TokenPayload) {
+  async getSavedListings(@Query() query: PaginationDto, @CurrentUser() user: TokenPayload) {
     this.logger.log(`[REQUEST] GET /listings/saved - userId=${user.sub}, page=${query.page}, limit=${query.limit}`);
     const result = await this.savedService.getSavedListings(user.sub, query.page, query.limit);
     this.logger.log(`[RESPONSE] GET /listings/saved - total=${result.meta.total}, page=${result.meta.page}`);
@@ -150,17 +149,17 @@ export class ListingsController {
     @Param('id') id: string,
     @Headers('authorization') authHeader?: string,
   ) {
-    let sellerId: string | undefined;
+    let currentUserId: string | undefined;
     if (authHeader?.startsWith('Bearer ')) {
       try {
         const payload = await this.jwtTokenService.verifyAccessToken(authHeader.slice(7));
-        sellerId = payload.sub;
+        currentUserId = payload.sub;
       } catch {
         // invalid/expired token — treat as public access
       }
     }
-    this.logger.log(`[REQUEST] GET /listings/${id} - ${sellerId ? `userId=${sellerId}` : 'public'}`);
-    const listing = await this.detailService.getListing(id, sellerId);
+    this.logger.log(`[REQUEST] GET /listings/${id} - ${currentUserId ? `userId=${currentUserId}` : 'public'}`);
+    const listing = await this.detailService.getListing(id, currentUserId);
     this.logger.log(`[RESPONSE] GET /listings/${id} - status=${listing.status}`);
     return { success: true, listing };
   }
