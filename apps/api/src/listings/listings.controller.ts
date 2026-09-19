@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -9,13 +10,17 @@ import {
   Post,
   Headers,
   Query,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { CreateListingDto } from './dto/create-listing.dto.js';
 import { UpdateListingDto } from './dto/update-listing.dto.js';
 import { PublishListingDto } from './dto/publish-listing.dto.js';
 import { ListingQueryDto } from './dto/listing-query.dto.js';
+import { ReorderListingImagesDto } from './dto/reorder-listing-images.dto.js';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 import { JwtTokenService } from '../auth/jwt/jwt-token.service.js';
 import type { TokenPayload } from '../auth/jwt/jwt-token.service.js';
@@ -26,6 +31,8 @@ import { ListingDiscoveryService } from './services/listing-discovery.service.js
 import { ListingDetailService } from './services/listing-detail.service.js';
 import { ListingSellerService } from './services/listing-seller.service.js';
 import { ListingDeleteService } from './services/listing-delete.service.js';
+import { ListingImageService } from './services/listing-image.service.js';
+import { ListingSavedService } from './services/listing-saved.service.js';
 
 @Controller('listings')
 export class ListingsController {
@@ -39,6 +46,8 @@ export class ListingsController {
     private readonly detailService: ListingDetailService,
     private readonly sellerService: ListingSellerService,
     private readonly deleteService: ListingDeleteService,
+    private readonly imageService: ListingImageService,
+    private readonly savedService: ListingSavedService,
     private readonly jwtTokenService: JwtTokenService,
   ) {}
 
@@ -109,6 +118,33 @@ export class ListingsController {
     return { success: true, listings };
   }
 
+  @Get('saved')
+  @UseGuards(AuthGuard('jwt'))
+  async getSavedListings(@Query() query: ListingQueryDto, @CurrentUser() user: TokenPayload) {
+    this.logger.log(`[REQUEST] GET /listings/saved - userId=${user.sub}, page=${query.page}, limit=${query.limit}`);
+    const result = await this.savedService.getSavedListings(user.sub, query.page, query.limit);
+    this.logger.log(`[RESPONSE] GET /listings/saved - total=${result.meta.total}, page=${result.meta.page}`);
+    return result;
+  }
+
+  @Post(':id/save')
+  @UseGuards(AuthGuard('jwt'))
+  async saveListing(@Param('id') id: string, @CurrentUser() user: TokenPayload) {
+    this.logger.log(`[REQUEST] POST /listings/${id}/save - userId=${user.sub}`);
+    const saved = await this.savedService.saveListing(id, user.sub);
+    this.logger.log(`[RESPONSE] POST /listings/${id}/save - saved listingId=${saved.listingId}`);
+    return { success: true, message: 'Listing saved successfully', saved };
+  }
+
+  @Delete(':id/save')
+  @UseGuards(AuthGuard('jwt'))
+  async unsaveListing(@Param('id') id: string, @CurrentUser() user: TokenPayload) {
+    this.logger.log(`[REQUEST] DELETE /listings/${id}/save - userId=${user.sub}`);
+    await this.savedService.unsaveListing(id, user.sub);
+    this.logger.log(`[RESPONSE] DELETE /listings/${id}/save - removed`);
+    return { success: true, message: 'Listing removed from saved' };
+  }
+
   @Get(':id')
   async getListing(
     @Param('id') id: string,
@@ -136,5 +172,54 @@ export class ListingsController {
     await this.deleteService.deleteListing(id, user.sub);
     this.logger.log(`[RESPONSE] DELETE /listings/${id} - deleted`);
     return { success: true, message: 'Listing deleted successfully' };
+  }
+
+  @Post(':id/images')
+  @UseGuards(AuthGuard('jwt'))
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadImage(
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File,
+    @CurrentUser() user: TokenPayload,
+  ) {
+    this.logger.log(`[REQUEST] POST /listings/${id}/images - userId=${user.sub}`);
+
+    if (!file) {
+      throw new BadRequestException('No file was supplied. Upload an image under the "file" field.');
+    }
+
+    const image = await this.imageService.addImage(id, user.sub, {
+      buffer: file.buffer,
+      mimetype: file.mimetype,
+      size: file.size,
+    });
+    this.logger.log(`[RESPONSE] POST /listings/${id}/images - imageId=${image.id}`);
+    return { success: true, message: 'Image uploaded successfully', image };
+  }
+
+  @Delete(':id/images/:imageId')
+  @UseGuards(AuthGuard('jwt'))
+  async deleteImage(
+    @Param('id') id: string,
+    @Param('imageId') imageId: string,
+    @CurrentUser() user: TokenPayload,
+  ) {
+    this.logger.log(`[REQUEST] DELETE /listings/${id}/images/${imageId} - userId=${user.sub}`);
+    await this.imageService.deleteImage(id, user.sub, imageId);
+    this.logger.log(`[RESPONSE] DELETE /listings/${id}/images/${imageId} - deleted`);
+    return { success: true, message: 'Image deleted successfully' };
+  }
+
+  @Patch(':id/images/reorder')
+  @UseGuards(AuthGuard('jwt'))
+  async reorderImages(
+    @Param('id') id: string,
+    @Body() dto: ReorderListingImagesDto,
+    @CurrentUser() user: TokenPayload,
+  ) {
+    this.logger.log(`[REQUEST] PATCH /listings/${id}/images/reorder - userId=${user.sub}, imageIds=${dto.imageIds.join(',')}`);
+    const images = await this.imageService.reorderImages(id, user.sub, dto.imageIds);
+    this.logger.log(`[RESPONSE] PATCH /listings/${id}/images/reorder - count=${images.length}`);
+    return { success: true, message: 'Images reordered successfully', images };
   }
 }

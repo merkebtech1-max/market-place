@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ListingsController } from './listings.controller.js';
 import { PrismaModule } from '../prisma/prisma.module.js';
 import { AuthModule } from '../auth/auth.module.js';
+import { StorageModule } from '../storage/storage.module.js';
 import { ListingValidationService } from './services/listing-validation.service.js';
 import { ListingCreateService } from './services/listing-create.service.js';
 import { ListingUpdateService } from './services/listing-update.service.js';
@@ -12,9 +13,11 @@ import { ListingDiscoveryService } from './services/listing-discovery.service.js
 import { ListingDetailService } from './services/listing-detail.service.js';
 import { ListingSellerService } from './services/listing-seller.service.js';
 import { ListingDeleteService } from './services/listing-delete.service.js';
+import { ListingImageService } from './services/listing-image.service.js';
+import { ListingSavedService } from './services/listing-saved.service.js';
 
 @Module({
-  imports: [PrismaModule, AuthModule],
+  imports: [PrismaModule, AuthModule, StorageModule],
   controllers: [ListingsController],
   providers: [
     ListingValidationService,
@@ -27,6 +30,8 @@ import { ListingDeleteService } from './services/listing-delete.service.js';
     ListingDetailService,
     ListingSellerService,
     ListingDeleteService,
+    ListingImageService,
+    ListingSavedService,
   ],
 })
 export class ListingsModule {}

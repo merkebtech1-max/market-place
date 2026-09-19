@@ -1,31 +1,10 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { Prisma } from '../../generated/prisma/client.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { ListingQueryDto, ListingSort } from '../dto/listing-query.dto.js';
 import { ListingCondition, ListingStatus, UserStatus } from '../../generated/prisma/enums.js';
-import { ListingCard } from '../dto/listing-card.dto.js';
 import { ListingSearchService, PaginatedListings } from './listing-search.service.js';
 import { ListingFeedService } from './listing-feed.service.js';
-
-const LISTING_CARD_SELECT = {
-  id: true,
-  title: true,
-  priceCents: true,
-  condition: true,
-  isNegotiable: true,
-  publishedAt: true,
-  images: {
-    select: { storageKey: true, width: true, height: true, blurhash: true, position: true },
-    orderBy: { position: 'asc' },
-    take: 1,
-  },
-  category: { select: { id: true, nameEn: true, nameAm: true, slug: true } },
-  city: { select: { id: true, nameEn: true, nameAm: true } },
-  subcity: { select: { id: true, nameEn: true, nameAm: true } },
-  seller: { select: { id: true, displayName: true, avatarKey: true, ratingAvg: true, ratingCount: true } },
-} satisfies Prisma.ListingSelect;
-
-type ListingCardRow = Prisma.ListingGetPayload<{ select: typeof LISTING_CARD_SELECT }>;
+import { toListingCard, ListingCardRow } from './listing-card.mapper.js';
 
 @Injectable()
 export class ListingDiscoveryService {
@@ -125,7 +104,7 @@ export class ListingDiscoveryService {
       }),
     ]);
 
-    const data = rows.map((row) => this.toCard(row));
+    const data = rows.map((row) => toListingCard(row));
 
     return { data, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
   }
@@ -218,24 +197,8 @@ export class ListingDiscoveryService {
     const data = idOrder
       .map((id) => byId.get(id))
       .filter((row): row is ListingCardRow => row !== undefined)
-      .map((row) => this.toCard(row));
+      .map((row) => toListingCard(row));
 
     return { data, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
-  }
-
-  private toCard(row: ListingCardRow): ListingCard {
-    return {
-      id: row.id,
-      title: row.title,
-      priceCents: row.priceCents,
-      condition: row.condition,
-      isNegotiable: row.isNegotiable,
-      publishedAt: row.publishedAt!,
-      thumbnail: row.images[0] ?? null,
-      category: row.category,
-      city: row.city,
-      subcity: row.subcity,
-      seller: { ...row.seller, ratingAvg: row.seller.ratingAvg.toString() },
-    };
   }
 }

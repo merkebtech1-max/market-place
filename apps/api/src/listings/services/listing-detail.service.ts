@@ -16,7 +16,18 @@ export class ListingDetailService {
       const listing = await this.prisma.listing.findUnique({
         where: { id: listingId },
         include: {
-          images: { orderBy: { position: 'asc' } },
+          images: {
+            select: {
+              id: true,
+              storageKey: true,
+              width: true,
+              height: true,
+              blurhash: true,
+              phash: true,
+              position: true,
+            },
+            orderBy: { position: 'asc' },
+          },
           seller: { select: { id: true, displayName: true, avatarKey: true, ratingAvg: true, ratingCount: true } },
           category: true,
           city: true,
