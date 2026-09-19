@@ -24,8 +24,10 @@ export class ListingImageDto {
 
 /** DTO for publishing a listing */
 export class PublishListingDto {
+  // TODO: Remove @IsOptional and make images required once the image upload endpoint is implemented
+  @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => ListingImageDto)
-  images: ListingImageDto[];
+  images?: ListingImageDto[];
 }

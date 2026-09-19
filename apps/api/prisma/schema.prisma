@@ -343,7 +343,7 @@ model ListingImage {
 
   listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
 
-  @@index([listingId])
+  @@index([listingId, position])
 }
 
 model SavedListing {

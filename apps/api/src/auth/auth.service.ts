@@ -1,5 +1,6 @@
 import {
   ConflictException,
+  ForbiddenException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -11,6 +12,7 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { OtpService } from './otp/otp.service.js';
 import { JwtTokenService, AuthTokens } from './jwt/jwt-token.service.js';
 import { UserModel } from '../generated/prisma/models/User.js';
+import { BANNED_ACCOUNT_MESSAGE, isBannedStatus } from './common/account-status.js';
 
 /** Tokens returned after a successful login or registration */
 export interface AuthResult {
@@ -48,6 +50,12 @@ export class AuthService {
         throw new NotFoundException('No account found for this number. Please register first.');
       }
 
+      if (isBannedStatus(user.status)) {
+        this.logger.warn(`[AUTH] Banned user attempted login: userId=${user.id}, status=${user.status}`);
+        await this.revokeAllUserSessions(user.id);
+        throw new ForbiddenException(BANNED_ACCOUNT_MESSAGE);
+      }
+
       this.logger.debug(`[SESSION] Creating session for userId=${user.id}`);
       const { session, refreshToken } = await this.createSession(user.id, userAgent, ipHash);
 
@@ -57,7 +65,7 @@ export class AuthService {
       this.logger.log(`[SUCCESS] Login successful: userId=${user.id}, phone=${phone}, sessionId=${session.id}`);
       return { userId: user.id, tokens: { accessToken, refreshToken } };
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof UnauthorizedException) {
+      if (error instanceof NotFoundException || error instanceof UnauthorizedException || error instanceof ForbiddenException) {
         throw error;
       }
       this.logger.error(`[ERROR] Login failed for phone=${phone} - ${error instanceof Error ? error.message : 'Unknown error'}`, error instanceof Error ? error.stack : String(error));
@@ -86,6 +94,11 @@ export class AuthService {
       this.logger.debug(`[VALIDATION] Checking if user already exists for phone=${phone}`);
       const existing = await this.prisma.user.findUnique({ where: { phone } });
       if (existing) {
+        if (isBannedStatus(existing.status)) {
+          this.logger.warn(`[AUTH] Banned user attempted re-registration: userId=${existing.id}, status=${existing.status}`);
+          await this.revokeAllUserSessions(existing.id);
+          throw new ForbiddenException(BANNED_ACCOUNT_MESSAGE);
+        }
         this.logger.warn(`[AUTH] User already exists for phone=${phone}, userId=${existing.id}`);
         throw new ConflictException('An account with this phone number already exists. Please log in instead.');
       }
@@ -120,7 +133,7 @@ export class AuthService {
       this.logger.log(`[SUCCESS] Registration successful: userId=${user.id}, phone=${phone}, sessionId=${session.id}`);
       return { userId: user.id, tokens: { accessToken, refreshToken } };
     } catch (error) {
-      if (error instanceof ConflictException || error instanceof UnauthorizedException) {
+      if (error instanceof ConflictException || error instanceof UnauthorizedException || error instanceof ForbiddenException) {
         throw error;
       }
       this.logger.error(`[ERROR] Registration failed for phone=${phone} - ${error instanceof Error ? error.message : 'Unknown error'}`, error instanceof Error ? error.stack : String(error));
@@ -205,6 +218,15 @@ export class AuthService {
         throw new InternalServerErrorException('User not found');
       }
 
+      if (isBannedStatus(user.status)) {
+        this.logger.warn(`[AUTH] Banned user attempted token refresh: userId=${user.id}, sessionId=${sessionId}`);
+        await this.prisma.session.update({
+          where: { id: session.id },
+          data: { revokedAt: new Date() },
+        });
+        throw new UnauthorizedException(BANNED_ACCOUNT_MESSAGE);
+      }
+
       this.logger.debug(`[TOKEN] Generating new refresh token with rotation: sessionId=${sessionId}`);
       const newRefreshToken = this.jwtTokenService.generateRefreshToken(session.id);
       const newRefreshTokenHash = this.jwtTokenService.hashRefreshTokenRandomPart(newRefreshToken);
@@ -228,6 +250,15 @@ export class AuthService {
       this.logger.error(`[ERROR] Token refresh failed - ${error instanceof Error ? error.message : 'Unknown error'}`, error instanceof Error ? error.stack : String(error));
       throw new InternalServerErrorException('Unable to refresh your tokens at this time. Please try again later.');
     }
+  }
+
+  /** Revokes every active session for a user — forces banned accounts offline immediately. */
+  private async revokeAllUserSessions(userId: string): Promise<void> {
+    this.logger.debug(`[SESSION] Revoking all sessions for userId=${userId}`);
+    await this.prisma.session.updateMany({
+      where: { userId, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
   }
 
   /** Creates a session row with a hashed refresh token and returns both the session and raw token */

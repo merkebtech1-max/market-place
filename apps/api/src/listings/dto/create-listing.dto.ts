@@ -1,4 +1,4 @@
-import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Min, IsObject } from 'class-validator';
+import { IsBoolean, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Min, IsObject } from 'class-validator';
 import { ListingCondition } from '../../generated/prisma/enums.js';
 
 /** DTO for creating a new listing draft */
@@ -19,6 +19,7 @@ export class CreateListingDto {
   priceCents: number;
 
   @IsOptional()
+  @IsBoolean()
   isNegotiable?: boolean;
 
   @IsOptional()
