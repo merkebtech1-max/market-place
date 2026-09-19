@@ -46,7 +46,17 @@ export class ListingSavedService {
       }
 
       try {
-        const saved = await this.prisma.savedListing.create({ data: { userId, listingId } });
+        // Create + increment run in one transaction; a concurrent duplicate save
+        // is rejected by the composite unique key (P2002), so saveCount is
+        // incremented exactly once per distinct (userId, listingId).
+        const saved = await this.prisma.$transaction(async (tx) => {
+          const created = await tx.savedListing.create({ data: { userId, listingId } });
+          await tx.listing.update({
+            where: { id: listingId },
+            data: { saveCount: { increment: 1 } },
+          });
+          return created;
+        });
         this.logger.log(`[SUCCESS] Listing saved: userId=${userId}, listingId=${listingId}`);
         return saved;
       } catch (error) {
@@ -73,8 +83,18 @@ export class ListingSavedService {
     this.logger.log(`[START] Removing saved listing=${listingId} by userId=${userId}`);
 
     try {
-      // deleteMany is idempotent — safe whether or not the row exists.
-      await this.prisma.savedListing.deleteMany({ where: { userId, listingId } });
+      // deleteMany is idempotent — safe whether or not the row exists. saveCount
+      // only decrements when an actual row was removed, keeping it in sync with
+      // the amount of SavedListing rows.
+      await this.prisma.$transaction(async (tx) => {
+        const removed = await tx.savedListing.deleteMany({ where: { userId, listingId } });
+        if (removed.count > 0) {
+          await tx.listing.update({
+            where: { id: listingId },
+            data: { saveCount: { decrement: 1 } },
+          });
+        }
+      });
       this.logger.log(`[SUCCESS] Saved listing removed: userId=${userId}, listingId=${listingId}`);
     } catch (error) {
       this.logger.error(`[ERROR] Failed to unsave listing=${listingId} for userId=${userId} - ${error instanceof Error ? error.message : 'Unknown error'}`);
