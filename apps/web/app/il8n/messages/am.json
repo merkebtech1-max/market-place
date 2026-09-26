@@ -1,5 +1,7 @@
 {
-  "brand": { "name": "መርከብ ማርኬት" },
+  "brand": {
+    "name": "መርከብ ማርኬት"
+  },
   "nav": {
     "home": "መነሻ",
     "search": "ፈልግ",
@@ -14,7 +16,8 @@
     "signIn": "ግባ",
     "sellItem": "እቃ ሽጥ",
     "sellShort": "ሽጥ",
-    "notifications": "ማሳወቂያዎች"
+    "notifications": "ማሳወቂያዎች",
+    "logout": "ውጣ"
   },
   "common": {
     "loading": "በመጫን ላይ…",
@@ -53,8 +56,16 @@
     "for_parts": "ለመለዋወጫ"
   },
   "home": {
-    "heroTitle": "በአካባቢዎ በታማኝነት ይሽጡ እና ይግዙ",
-    "heroSubtitle": "የተረጋገጡ ሻጮች። እውነተኛ ዋጋዎች። በአቅራቢያዎ በደህንነት ይገናኙ።",
+    "heroTitle": "በአካባቢዎ ይግዙ እና ይሽጡ። በታማኝነት ይገበያዩ።",
+    "heroSubtitle": "የተረጋገጡ ሻጮች። እውነተኛ ዋጋዎች። ደህንነቱ የተጠበቀ ግብይት።",
+    "getStarted": "ይጀምሩ",
+    "login": "ግባ",
+    "createAccount": "አካውንት ይክፈቱ",
+    "browseListings": "ዕቃዎችን ያስሱ",
+    "slide1Title": "በብልሃት ይገበያዩ። ተጨማሪ ይቆጥቡ።",
+    "slide2Title": "ይግዙ። ይሽጡ። ይገናኙ።",
+    "slide3Title": "ለንግድዎ የተዘጋጀ ጥራት ያለው ያገለገለ ምርት።",
+    "slide4Title": "የእርስዎ የንግድ ሁለተኛ እጅ ገበያ።",
     "promotedTitle": "ተለይተው የቀረቡ",
     "categoriesTitle": "ምድቦችን ያስሱ",
     "feedTitle": "በ{location} አዳዲስ ዕቃዎች",
@@ -99,7 +110,125 @@
     "responseRate": "{rate}% ምላሽ ሰጪነት",
     "responseTime": "ብዙውን ጊዜ ምላሽ የሚሰጠው በ{time}",
     "memberSince": "አባል ከ{date} ጀምሮ",
-    "views": "{count} ጊዜ ታይቷል"
+    "views": "{count} ጊዜ ታይቷል",
+    "condition": "ሁኔታ",
+    "category": "ምድብ",
+    "nearby": "በ{location} አቅራቢያ",
+    "nearbyBody": "በዚህ አካባቢ የተለጠፉ ተጨማሪ ዕቃዎች"
+  },
+  "sell": {
+    "eyebrow": "በመርከብ ይሽጡ",
+    "title": "እቃዎን ይመዝግቡ",
+    "subtitle": "ምድብ ይምረጡ፣ ግልጽ ፎቶዎች እና ዝርዝሮች ያክሉ፣ ከዚያ ፍትሐዊ የአካባቢ ዋጋ ያስቀምጡ።",
+    "stepsLabel": "የምዝገባ ደረጃዎች",
+    "stepCategory": "ምድብ",
+    "stepDetails": "ዝርዝር",
+    "stepPricing": "ዋጋ እና ቦታ",
+    "stepReview": "ግምገማ",
+    "categoryTitle": "ምን እየሸጡ ነው?",
+    "categoryBody": "ገዢዎች እንዲያገኙት ከእቃዎ ጋር የሚመጥን ምድብ ይምረጡ።",
+    "detailsTitle": "እቃዎን ይግለጹ",
+    "detailsBody": "ታማኝ ርዕሶች እና ፎቶዎች ዕቃዎ በፍጥነት እንዲሸጥ ያግዛሉ።",
+    "photos": "ፎቶዎች",
+    "photosCta": "ፎቶ ጨምር",
+    "photosHint": "ግልጽ የቀን ብርሃን ፎቶዎች ይሻላሉ። በኋላ ተጨማሪ ማከል ይችላሉ።",
+    "itemTitle": "ርዕስ",
+    "itemTitlePlaceholder": "ለምሳሌ፡ iPhone 13 Pro 128GB — በጣም ጥሩ ሁኔታ",
+    "description": "መግለጫ",
+    "descriptionPlaceholder": "ብራንድ፣ ዕድሜ፣ የሚያካትተውን እና ማንኛውንም ጉድለት ይጨምሩ።",
+    "descriptionHint": "ቢያንስ 20 ቁምፊዎች።",
+    "pricingTitle": "ዋጋ፣ ሁኔታ እና አካባቢ",
+    "pricingBody": "የሚጠይቁትን ዋጋ እና ገዢዎች የሚገናኙበትን ቦታ ያስቀምጡ።",
+    "price": "ዋጋ",
+    "condition": "ሁኔታ",
+    "locationTitle": "የመገናኛ ቦታ",
+    "city": "ከተማ",
+    "cityPlaceholder": "ከተማ ይምረጡ",
+    "subcity": "ክፍለ ከተማ / አካባቢ",
+    "subcityPlaceholder": "አካባቢ ይምረጡ",
+    "landmark": "ምልክት (አማራጭ)",
+    "landmarkPlaceholder": "ኤድና ሞል አቅራቢያ",
+    "landmarkHint": "ገዢዎች ደህንነቱ የተጠበቀ የሕዝብ ቦታ እንዲያውቁ ይረዳል።",
+    "reviewTitle": "ከማተም በፊት ይገምግሙ",
+    "reviewBody": "ዝርዝሮቹን ድጋሚ ያረጋግጡ። ከታተመ በኋላ ከዳሽቦርድዎ ማስተካከል ይችላሉ።",
+    "noPhoto": "ፎቶ አልተጨመረም",
+    "signInRequired": "ለማተም ይግቡ። ረቂቅዎ በዚህ ገጽ ላይ ይቆያል።",
+    "continue": "ቀጥል",
+    "publish": "ዕቃውን አተም",
+    "successTitle": "ዕቃው ተልኳል",
+    "successBody": "እቃዎ ለግምገማ ዝግጁ ነው። ከጸደቀ በኋላ በፍለጋ ይታያል።",
+    "backHome": "ወደ መነሻ ተመለስ",
+    "listAnother": "ሌላ እቃ መዝግብ",
+    "errors": {
+      "category": "ለመቀጠል ምድብ ይምረጡ።",
+      "title": "ቢያንስ 4 ቁምፊ ያለው ርዕስ ያስገቡ።",
+      "description": "ቢያንስ 20 ቁምፊ ያለ መግለጫ ያክሉ።",
+      "price": "ትክክለኛ የኢት ብር ዋጋ ያስገቡ።",
+      "condition": "የእቃውን ሁኔታ ይምረጡ።",
+      "city": "ከተማ ይምረጡ።",
+      "subcity": "ክፍለ ከተማ ወይም አካባቢ ይምረጡ።"
+    }
+  },
+  "auth": {
+    "loginTab": "ግባ",
+    "signupTab": "አካውንት ክፈት",
+    "name": "ሙሉ ስም",
+    "namePlaceholder": "አበበ በቀለ",
+    "phone": "ስልክ ቁጥር",
+    "password": "የይለፍ ቃል",
+    "confirmPassword": "የይለፍ ቃል አረጋግጥ",
+    "pin": "6-አሃዝ ፒን",
+    "confirmPin": "ፒን አረጋግጥ",
+    "otp": "4-አሃዝ ኮድ",
+    "passwordMismatch": "የይለፍ ቃላቱ አይመሳሰሉም።",
+    "pinMismatch": "ፒኖቹ አይመሳሰሉም።",
+    "pinInvalid": "6 አሃዝ ፒን ያስገቡ።",
+    "otpInvalid": "4 አሃዝ ኮዱን ያስገቡ።",
+    "sendOtp": "ኮድ ላክ",
+    "verifyOtp": "አረጋግጥ",
+    "phoneStepBody": "ለመጀመር ስልክ ቁጥርዎን ያስገቡ።",
+    "otpStepBody": "ወደ {phone} የተላከውን ኮድ ያስገቡ።",
+    "createAccountCta": "ፍጠር",
+    "loginCta": "ግባ",
+    "forgotPassword": "ፒን ረሳሁ",
+    "forgotSubmit": "ቀጥል",
+    "forgotSent": "መለያ ካለ፣ ፒንዎን እንዲቀይሩ እንረዳዎታለን።",
+    "backToLogin": "ወደ መግቢያ ተመለስ"
+  },
+  "placeholder": {
+    "comingSoon": "ይህ ገጽ ገና በግንባታ ላይ ነው።",
+    "signInTitle": "ግባ",
+    "signInBody": "በስልክ ቁጥር እና በኤስኤምኤስ ኮድ መግቢያ ገና አልተጠናቀቀም።",
+    "savedTitle": "የተቀመጡ ዕቃዎች",
+    "savedBody": "የሚያስቀምጧቸው ዕቃዎች እና ፍለጋዎች እዚህ ይታያሉ።",
+    "notificationsTitle": "ማሳወቂያዎች",
+    "notificationsBody": "የዋጋ ቅናሾች፣ ቅናሾች እና የግምገማ ዝማኔዎች እዚህ ይታያሉ።",
+    "sellerProfileTitle": "የሻጭ መገለጫ",
+    "servicesTitle": "የአገልግሎት ማውጫ",
+    "servicesBody": "ኤሌክትሪሺያኖች፣ የቧንቧ ሠራተኞች፣ አስጠኚዎች እና ሌሎችም — በቅርቡ ይመጣል።",
+    "serviceProfileTitle": "የአገልግሎት መገለጫ",
+    "settingsTitle": "ቅንብሮች",
+    "sellTitle": "እቃ ሽጥ",
+    "sellBody": "የዕቃ ማስመዝገቢያው ገና አልተጠናቀቀም።",
+    "messageThreadTitle": "ውይይት",
+    "messagesTitle": "መልዕክቶች",
+    "messagesBody": "የገዢ እና የሻጭ ውይይቶችዎ እዚህ ይታያሉ።",
+    "dashboardTitle": "የሻጭ ዳሽቦርድ",
+    "dashboardOffersTitle": "ቅናሾች",
+    "dashboardAnalyticsTitle": "ትንታኔ",
+    "dashboardBillingTitle": "ክፍያ",
+    "dashboardBoostsTitle": "ማራመጃዎች",
+    "dashboardListingsTitle": "የእኔ ዕቃዎች",
+    "adminUsersTitle": "ተጠቃሚዎች",
+    "adminTaxonomyTitle": "የምድብ እና ባህሪ አርታዒ",
+    "adminRevenueTitle": "የገቢ ዳሽቦርድ",
+    "adminPricingTitle": "ዋጋ እና ጥቅሎች",
+    "adminPromotionsTitle": "የማስተዋወቂያ ክምችት",
+    "adminOverviewTitle": "የአስተዳደር አጠቃላይ እይታ",
+    "adminModerationTitle": "የግምገማ ወረፋ",
+    "adminFeatureFlagsTitle": "የባህሪ ማብሪያዎች",
+    "adminAuditLogTitle": "የኦዲት መዝገብ",
+    "adminEntitlementsTitle": "በእጅ የሚሰጡ ፈቃዶች"
   },
   "states": {
     "emptySearchTitle": "ከማጣሪያዎ ጋር የሚዛመድ ዕቃ የለም",
@@ -114,5 +243,247 @@
     "notFoundBody": "የሚፈልጉት ገጽ የለም ወይም ተነስቷል።",
     "offlineTitle": "ከመስመር ውጭ ነዎት",
     "offlineBody": "እስከ ተመልሰው እስኪገናኙ ድረስ አንዳንድ ይዘት ያረጀ ሊሆን ይችላል።"
+  },
+  "chat": {
+    "title": "መልዕክቶች",
+    "back": "ተመለስ",
+    "tab": {
+      "all": "ሁሉም",
+      "buying": "የምገዛው",
+      "selling": "የምሸጠው"
+    },
+    "emptyTitle": "እስካሁን ውይይት የለም",
+    "emptyBody": "ለሻጭ ሲጽፉ ወይም ገዢ ሲጽፍልዎ እዚህ ይታያል።",
+    "you": "እርስዎ",
+    "unread": "{count} ያልተነበቡ",
+    "offerPreview": "ቅናሽ አቅርበዋል",
+    "notFound": "ውይይቱ አልተገኘም",
+    "safety": "በሕዝብ ቦታ ይገናኙ፤ ገንዘብ በአካል በጥሬ ይክፈሉ። ቅድሚያ ገንዘብ አይላኩ።",
+    "offer": "ቅናሽ",
+    "noPayment": "ክፍያ በመርከብ በኩል አይፈጸምም — በአካል በጥሬ ይክፈሉ።",
+    "accept": "ተቀበል",
+    "decline": "ውድቅ አድርግ",
+    "reserved": "እቃው ለ48 ሰዓት ተይዟል",
+    "status": {
+      "pending": "ምላሽ በመጠበቅ ላይ",
+      "accepted": "ተቀባይነት አግኝቷል",
+      "declined": "ውድቅ ተደርጓል",
+      "countered": "ተቃራኒ ቅናሽ ቀርቧል"
+    },
+    "quick": {
+      "available": "ይህ አሁንም አለ?",
+      "lastPrice": "የመጨረሻ ዋጋዎ ስንት ነው?",
+      "whereMeet": "የት ልንገናኝ እንችላለን?",
+      "canMeet": "ዛሬ መገናኘት እንችላለን?",
+      "yesAvailable": "አዎ፣ አለ",
+      "priceFirm": "ዋጋው የተወሰነ ነው",
+      "comeSee": "መጥተው ይመልከቱ",
+      "sold": "ይቅርታ፣ ተሽጧል"
+    },
+    "placeholder": "መልዕክት ይጻፉ",
+    "send": "ላክ",
+    "cancel": "ሰርዝ",
+    "makeOffer": "ቅናሽ አቅርብ",
+    "counter": "ተቃራኒ ቅናሽ",
+    "wasOffer": "ቀደም ሲል {amount}",
+    "offerSheet": {
+      "titleOffer": "ቅናሽ ያቅርቡ",
+      "titleCounter": "ተቃራኒ ቅናሽ",
+      "sendOffer": "ቅናሽ ላክ",
+      "sendCounter": "ተቃራኒ ቅናሽ ላክ",
+      "listPrice": "የተለጠፈ ዋጋ",
+      "theirOffer": "የእነሱ ቅናሽ",
+      "amount": "የእርስዎ መጠን",
+      "errInvalid": "መጠኑን በብር ያስገቡ፣ ለምሳሌ 4500",
+      "errTooHigh": "ቅናሽዎ ከተለጠፈው ዋጋ መብለጥ አይችልም"
+    },
+    "startChat": "ሰላም ብለው ውይይቱን ይጀምሩ"
+  },
+  "report": {
+    "short": "ሪፖርት",
+    "title": "ሪፖርት አድርግ",
+    "subtitle": "አወያዮች ሪፖርቱን ይመለከታሉ።",
+    "target": {
+      "listing": "ዕቃ",
+      "user": "ተጠቃሚ",
+      "message": "መልዕክት"
+    },
+    "reason": "ምክንያት",
+    "reasons": {
+      "counterfeit": "ሐሰተኛ ዕቃ",
+      "stolen": "የተሰረቀ ዕቃ",
+      "prohibited": "የተከለከለ ዕቃ",
+      "scam": "ማጭበርበር",
+      "abuse": "ስድብ ወይም ትንኮሳ",
+      "wrongCategory": "የተሳሳተ ምድብ"
+    },
+    "details": "ተጨማሪ ማብራሪያ (አማራጭ)",
+    "detailsHint": "ምን እንደተፈጠረ ይጻፉ…",
+    "send": "ሪፖርት ላክ",
+    "done": "ተጠናቋል",
+    "thanks": "እናመሰግናለን። አወያዮች ሪፖርትዎን ይመለከታሉ።",
+    "errReason": "ምክንያት ይምረጡ",
+    "listingCta": "ይህን ዕቃ ሪፖርት አድርግ"
+  },
+  "review": {
+    "title": "{name}ን ደረጃ ይስጡ",
+    "rating": "ደረጃ",
+    "starLabel": "{count} ኮከቦች",
+    "comment": "አስተያየት (አማራጭ)",
+    "commentHint": "ግብይቱ እንዴት ነበር?",
+    "submit": "ግምገማ ላክ",
+    "later": "አሁን አይደለም",
+    "once": "እያንዳንዱን ግብይት አንድ ጊዜ ብቻ መገምገም ይችላሉ።",
+    "errStars": "ከ1 እስከ 5 ኮከብ ይምረጡ",
+    "prompt": "ከ{name} ጋር ግብይቱ እንዴት ነበር?",
+    "cta": "ግምገማ ይጻፉ",
+    "thanks": "ስለ ግምገማዎ እናመሰግናለን!",
+    "short": "ግምገማ"
+  },
+  "meetup": {
+    "short": "መገናኘት",
+    "title": "የመገናኛ ቦታ ጠቁም",
+    "subtitle": "ሰው የሚበዛበት፣ ብርሃን ያለው የሕዝብ ቦታ ይምረጡ።",
+    "places": {
+      "ednaMall": {
+        "name": "ኤድና ሞል፣ ቦሌ",
+        "note": "ገበያ ማዕከል · ብዙ ሰው የሚበዛበት"
+      },
+      "police": {
+        "name": "ቦሌ ፖሊስ ጣቢያ",
+        "note": "ፖሊስ ጣቢያ · ደህንነቱ የተጠበቀ"
+      },
+      "bank": {
+        "name": "ዳሽን ባንክ፣ ቦሌ ቅርንጫፍ",
+        "note": "ባንክ · የጥበቃ ካሜራ አለው"
+      },
+      "square": {
+        "name": "ቦሌ መድኃኔዓለም አደባባይ",
+        "note": "የሕዝብ አደባባይ · ቀን ብቻ"
+      }
+    },
+    "other": "ሌላ ቦታ",
+    "otherHint": "የሕዝብ ቦታ ይጻፉ",
+    "when": "ቀን እና ሰዓት",
+    "send": "ሐሳብ ላክ",
+    "errPlace": "የሕዝብ ቦታ ይምረጡ",
+    "errWhen": "ቀን እና ሰዓት ይምረጡ",
+    "noHome": "ትክክለኛ የቤት አድራሻ አይጋሩ። የሕዝብ ቦታ ይምረጡ።",
+    "proposal": "የመገናኛ ቦታ ሐሳብ",
+    "accepted": "ተቀባይነት አግኝቷል",
+    "waiting": "ምላሽ በመጠበቅ ላይ"
+  },
+  "notif": {
+    "title": "ማሳወቂያዎች",
+    "tab": {
+      "feed": "ዝርዝር",
+      "settings": "ቅንብሮች"
+    },
+    "markAllRead": "ሁሉንም እንደተነበበ ምልክት አድርግ",
+    "unread": "ያልተነበበ",
+    "emptyTitle": "ሁሉንም ጨርሰዋል",
+    "emptyBody": "ቅናሾች፣ መልዕክቶች እና የዋጋ ቅነሳዎች እዚህ ይታያሉ።",
+    "prefs": "ስለ ምን ላሳውቅዎ",
+    "types": {
+      "message": "አዲስ መልዕክቶች",
+      "offer": "ቅናሾች እና ተቃራኒ ቅናሾች",
+      "priceDrop": "በተቀመጡ ዕቃዎች ላይ የዋጋ ቅነሳ",
+      "moderation": "የዕቃ ማረጋገጫ ዝማኔዎች",
+      "meetup": "የመገናኛ ሐሳቦች"
+    },
+    "push": {
+      "title": "የግፋ ማሳወቂያዎች",
+      "body": "መርከብ ሲዘጋ እንኳ ማሳወቂያ ያግኙ።",
+      "enable": "ማሳወቂያዎችን አብራ",
+      "on": "የግፋ ማሳወቂያዎች በርተዋል።",
+      "denied": "ማሳወቂያዎች ታግደዋል። በአሳሽ ቅንብሮች ውስጥ ይፍቀዱ።",
+      "unsupported": "ይህ አሳሽ የግፋ ማሳወቂያዎችን አይደግፍም።"
+    },
+    "items": {
+      "offerReceived": "{name} ብር {amount} አቀረበ",
+      "newMessage": "ከ{name} አዲስ መልዕክት",
+      "meetupProposed": "{name} በ{place} ለመገናኘት ጠቆመ",
+      "priceDrop": "{title} ወደ ብር {amount} ወርዷል",
+      "listingApproved": "ዕቃዎ \"{title}\" ታትሟል"
+    }
+  },
+  "account": {
+    "settings": "ቅንብሮች",
+    "myListings": "የእኔ ዕቃዎች",
+    "saved": "የተቀመጡ ዕቃዎች",
+    "messages": "መልዕክቶች",
+    "support": "እገዛ",
+    "signOut": "ውጣ",
+    "viewAccount": "መለያዎን ይመልከቱ",
+    "signedOutTitle": "እንኳን ወደ መርከብ በደህና መጡ",
+    "signedOutBody": "ለመሸጥ፣ ለማስቀመጥ እና ለመወያየት ይግቡ።",
+    "createAccount": "መለያ ይክፈቱ"
+  },
+  "support": {
+    "title": "እገዛ",
+    "subtitle": "በመርከብ ላይ ለመግዛት እና ለመሸጥ እገዛ።",
+    "topics": {
+      "safety": {
+        "title": "ደህንነትዎን ይጠብቁ",
+        "body": "በሕዝብ ቦታ ይገናኙ፤ ገንዘብ በአካል በጥሬ ይክፈሉ። ቅድሚያ ገንዘብ አይላኩ።"
+      },
+      "offers": {
+        "title": "ቅናሾች እና ክፍያ",
+        "body": "ክፍያ በመርከብ በኩል አይፈጸምም። በውይይት ዋጋ ይስማሙ፣ ሲገናኙ ይክፈሉ።"
+      },
+      "report": {
+        "title": "ችግር ያሳውቁ",
+        "body": "በውይይት ወይም በዕቃ ላይ ያለውን የሪፖርት ቁልፍ ይጠቀሙ፤ አወያዮች ይመለከቱታል።"
+      }
+    }
+  },
+  "dashboard": {
+    "title": "የሻጭ ዳሽቦርድ",
+    "welcome": "እንኳን ደህና መጡ፣ {name}",
+    "newListing": "አዲስ ዕቃ ይለጥፉ",
+    "listingsTitle": "የእኔ ዕቃዎች",
+    "tabs": {
+      "all": "ሁሉም",
+      "draft": "ረቂቆች",
+      "active": "ንቁ",
+      "reserved": "የተያዙ",
+      "sold": "የተሸጡ"
+    },
+    "status": {
+      "draft": "ረቂቅ",
+      "active": "ንቁ",
+      "reserved": "ተይዟል",
+      "sold": "ተሽጧል"
+    },
+    "emptyTitle": "እስካሁን ምንም የለም",
+    "empty": {
+      "all": "የሚለጥፏቸው ዕቃዎች እዚህ ይታያሉ።",
+      "draft": "ያልተጠናቀቁ ዕቃዎች እንደ ረቂቅ ይቀመጣሉ።",
+      "active": "የታተሙ ዕቃዎች እዚህ ይታያሉ።",
+      "reserved": "ለገዢ የተያዙ ዕቃዎች እዚህ ይታያሉ።",
+      "sold": "የሸጧቸው ዕቃዎች እዚህ ይታያሉ።"
+    },
+    "stats": "{views} እይታዎች · {saves} ማስቀመጫዎች",
+    "edit": "አርም",
+    "publish": "አትም",
+    "markSold": "እንደተሸጠ ምልክት አድርግ",
+    "soldConfirmTitle": "እንደተሸጠ ምልክት ይደረግ?",
+    "soldConfirmBody": "\"{title}\" እንደተሸጠ ምልክት ይደረግበታል፤ ከዚያ በኋላ ማረም አይቻልም።",
+    "soldDone": "\"{title}\" እንደተሸጠ ምልክት ተደርጓል።",
+    "publishedDone": "\"{title}\" ታትሟል።",
+    "signInTitle": "ዕቃዎችዎን ለማስተዳደር ይግቡ",
+    "signInBody": "የሚሸጡትን ለማየት እና ለማስተዳደር ይግቡ።",
+    "editTitle": "ዕቃ አርም",
+    "fieldTitle": "ርዕስ",
+    "fieldPrice": "ዋጋ",
+    "fieldDescription": "መግለጫ",
+    "save": "ለውጦችን አስቀምጥ",
+    "errTitle": "ርዕስ ያስገቡ",
+    "errPrice": "ዋጋውን በብር ያስገቡ፣ ለምሳሌ 4500",
+    "editSoldTitle": "ይህ ዕቃ ተሽጧል",
+    "editSoldBody": "የተሸጡ ዕቃዎችን ማረም አይቻልም።",
+    "editMissingTitle": "ዕቃው አልተገኘም",
+    "editMissingBody": "ተወግዶ ሊሆን ይችላል።",
+    "backToListings": "ወደ ዕቃዎቼ ተመለስ"
   }
 }

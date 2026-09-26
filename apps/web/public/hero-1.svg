@@ -1,0 +1,23 @@
+<svg width="1600" height="900" viewBox="0 0 1600 900" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="">
+  <defs>
+    <linearGradient id="bg1" x1="0" y1="0" x2="1600" y2="900" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#4338CA"/>
+      <stop offset="1" stop-color="#2E2682"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#bg1)"/>
+  <circle cx="1360" cy="150" r="260" fill="#818CF8" opacity="0.18"/>
+  <circle cx="1480" cy="620" r="340" fill="#E0E7FF" opacity="0.10"/>
+  <circle cx="120" cy="760" r="200" fill="#818CF8" opacity="0.12"/>
+  <g transform="translate(1060,270)" fill="none" stroke="#E0E7FF" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" opacity="0.95">
+    <rect x="0" y="70" width="360" height="270" rx="28"/>
+    <path d="M110 70 140 20h120l30 50"/>
+    <circle cx="180" cy="205" r="80"/>
+    <circle cx="300" cy="120" r="10" fill="#E0E7FF" stroke="none"/>
+  </g>
+  <g stroke="#FBFAF7" stroke-width="10" stroke-linecap="round" opacity="0.55">
+    <path d="M1000 205 L960 205"/>
+    <path d="M1010 260 L965 260"/>
+    <path d="M1000 315 L960 315"/>
+  </g>
+</svg>

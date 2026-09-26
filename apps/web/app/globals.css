@@ -6,16 +6,21 @@
  * (bg-primary, text-ink, shadow-elevation-2, rounded-card, ...).
  */
 @theme {
-  /* Brand — "Indigo Lux" */
-  --color-primary: #3730a3;
-  --color-primary-hover: #2e2682;
-  --color-primary-soft: #e0e7ff;
+  /* Brand — "Ocean Breeze" */
+  --color-primary: #006d77;
+  --color-primary-hover: #005a63;
+  --color-primary-soft: #caf0f8;
 
-  --color-ink: #16150f;
-  --color-ink-muted: #58564d;
-  --color-paper: #fbfaf7;
+  --color-secondary: #00b4c6;
+  --color-secondary-light: #90e0ef;
+  --color-secondary-soft: #caf0f8;
+  --color-accent: #ff6f91;
+
+  --color-ink: #0b1929;
+  --color-ink-muted: #64748b;
+  --color-paper: #f1f5f9;
   --color-surface: #ffffff;
-  --color-border: #e6e3da;
+  --color-border: #e2e8f0;
 
   /* Semantic */
   --color-success: #1b8a5a;
@@ -62,6 +67,7 @@
 
   html {
     color-scheme: light;
+    overflow-x: hidden;
   }
 
   body {
@@ -70,6 +76,8 @@
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+    overflow-x: hidden;
+    min-width: 0;
   }
 
   :focus-visible {
@@ -101,5 +109,14 @@
 
   .safe-bottom {
     padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+@keyframes kenburns {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.08);
   }
 }

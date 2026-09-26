@@ -1,16 +1,23 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
+import { useSavedIds } from "@/features/listings/saved";
+import { usePathname } from "next/navigation";
 import { ButtonLink } from "@/components/ui/Button";
-import { Avatar } from "@/components/ui/Avatar";
-import { BellIcon, CartIcon, ChevronDownIcon, MapPinIcon, PlusCircleIcon } from "@/components/ui/Icon";
+import { AccountMenu } from "@/components/layout/AccountMenu";
+import {
+  BellIcon,
+  CartIcon,
+  ChevronDownIcon,
+  ChevronLeftIcon,
+  MapPinIcon,
+  PlusCircleIcon,
+} from "@/components/ui/Icon";
 import { SearchInput } from "@/features/search/components/SearchInput";
 import { localeShortLabels, locales } from "@/il8n/config";
 import { useLanguage, useTranslations } from "@/il8n/LanguageProvider";
 import { cn } from "@/lib/utils";
-
-// Placeholder until the `auth` module (SRS §8.1) is wired up to real sessions.
-const isAuthenticated = false;
 
 function LanguageSwitcher({ className }: { className?: string }) {
   const { locale, setLocale } = useLanguage();
@@ -21,7 +28,7 @@ function LanguageSwitcher({ className }: { className?: string }) {
       role="group"
       aria-label={t("header.language")}
       className={cn(
-        "flex items-center rounded-control border border-border bg-surface p-0.5 text-xs font-semibold",
+        "flex items-center rounded-control border border-border bg-surface p-0.5 text-[11px] font-semibold sm:text-xs",
         className
       )}
     >
@@ -32,7 +39,7 @@ function LanguageSwitcher({ className }: { className?: string }) {
           onClick={() => setLocale(l)}
           aria-pressed={locale === l}
           className={cn(
-            "tap-target rounded-[5px] px-2.5 py-1 transition-colors",
+            "tap-target rounded-[5px] px-1.5 py-1 transition-colors sm:px-2.5",
             locale === l ? "bg-primary text-white" : "text-ink-muted hover:text-ink"
           )}
         >
@@ -60,14 +67,20 @@ function NotificationsButton() {
 
 function CartButton() {
   const t = useTranslations();
+  const count = useSavedIds().length;
 
   return (
     <Link
       href="/saved"
       aria-label={t("nav.saved")}
-      className="tap-target flex items-center justify-center rounded-full text-ink-muted hover:bg-ink/5 hover:text-ink"
+      className="tap-target relative flex items-center justify-center rounded-full text-ink-muted hover:bg-ink/5 hover:text-ink"
     >
       <CartIcon className="h-5.5 w-5.5" />
+      {count > 0 && (
+        <span className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-semibold leading-none text-white">
+          {count}
+        </span>
+      )}
     </Link>
   );
 }
@@ -91,42 +104,53 @@ function LocationIndicator() {
 
 export function Header() {
   const t = useTranslations();
+  const pathname = usePathname();
+  const isHome = pathname === "/home";
 
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-surface/95 backdrop-blur supports-backdrop-filter:bg-surface/80">
-      <div className="mx-auto flex h-14 max-w-7xl items-center gap-1.5 px-4 sm:gap-2.5 sm:px-6">
-        <Link href="/" className="flex shrink-0 items-center gap-2 font-bold text-primary">
-          {/* eslint-disable-next-line @next/next/no-img-element -- static SVG mark; next/image's optimizer refuses local SVGs without extra config */}
-          <img src="/logo.svg" alt={t("brand.name")} width={30} height={30} className="rounded-control" />
-          <span className="hidden text-base sm:inline">{t("brand.name")}</span>
+      <div className="mx-auto flex h-14 min-w-0 max-w-7xl items-center gap-1 px-3 sm:gap-2.5 sm:px-6">
+        {!isHome && (
+          <Link
+            href="/home"
+            aria-label={t("nav.home")}
+            className="tap-target flex shrink-0 items-center justify-center rounded-full text-ink-muted hover:bg-ink/5 hover:text-ink"
+          >
+            <ChevronLeftIcon className="h-5.5 w-5.5" />
+          </Link>
+        )}
+
+        <Link href="/home" className="flex min-w-0 shrink-0 items-center gap-2 font-bold text-primary">
+          <Image
+            src="/image/logo.jpg"
+            alt={t("brand.name")}
+            width={30}
+            height={30}
+            className="rounded-control object-cover"
+          />
+          <span className="hidden truncate text-base sm:inline">{t("brand.name")}</span>
         </Link>
 
         <LocationIndicator />
 
-        <SearchInput className="hidden flex-1 md:flex md:max-w-65 lg:max-w-sm" />
+        <SearchInput className="hidden min-w-0 flex-1 md:flex md:max-w-65 lg:max-w-sm" />
 
-        <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-1.5">
+        <div className="ml-auto flex min-w-0 shrink-0 items-center gap-0.5 sm:gap-1.5">
           <LanguageSwitcher className="hidden sm:flex" />
-          <NotificationsButton />
-          <CartButton />
-          <ButtonLink href="/sell" size="sm" className="hidden sm:inline-flex">
+          <span className="hidden xs:contents">
+            <NotificationsButton />
+            <CartButton />
+          </span>
+          <ButtonLink href="/sell" size="sm" className="hidden px-2.5 sm:inline-flex sm:px-3 md:inline-flex">
             <PlusCircleIcon className="h-4 w-4" />
-            {t("header.sellShort")}
+            <span className="hidden sm:inline">{t("header.sellShort")}</span>
           </ButtonLink>
-          {isAuthenticated ? (
-            <Link href="/dashboard" aria-label={t("nav.account")} className="tap-target flex items-center">
-              <Avatar name="You" size="sm" />
-            </Link>
-          ) : (
-            <ButtonLink href="/sign-in" variant="outline" size="sm" className="hidden sm:inline-flex">
-              {t("header.signIn")}
-            </ButtonLink>
-          )}
+          <AccountMenu />
           <LanguageSwitcher className="sm:hidden" />
         </div>
       </div>
 
-      <div className="border-t border-border px-4 py-1.5 md:hidden">
+      <div className="border-t border-border px-3 py-2 md:hidden">
         <SearchInput />
       </div>
     </header>

@@ -2,21 +2,28 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { HomeIcon, InboxIcon, PlusCircleIcon, SearchIcon, UserIcon } from "@/components/ui/Icon";
+import { BookmarkIcon, HomeIcon, PlusCircleIcon, SearchIcon, UserIcon } from "@/components/ui/Icon";
 import { useTranslations } from "@/il8n/LanguageProvider";
 import { cn } from "@/lib/utils";
 
 const tabs = [
-  { href: "/", key: "home", icon: HomeIcon, primary: false },
+  { href: "/home", key: "home", icon: HomeIcon, primary: false },
   { href: "/search", key: "search", icon: SearchIcon, primary: false },
   { href: "/sell", key: "sell", icon: PlusCircleIcon, primary: true },
-  { href: "/messages", key: "messages", icon: InboxIcon, primary: false },
-  { href: "/dashboard", key: "account", icon: UserIcon, primary: false },
+  { href: "/saved", key: "saved", icon: BookmarkIcon, primary: false },
+  { href: "/account", key: "account", icon: UserIcon, primary: false },
 ] as const;
 
+/** Account stays highlighted across the pages its menu leads to. */
+const accountPrefixes = ["/account", "/dashboard", "/messages", "/notifications", "/support"];
+
+function matches(pathname: string, prefix: string) {
+  return pathname === prefix || pathname.startsWith(`${prefix}/`);
+}
+
 function isActive(pathname: string, href: string) {
-  if (href === "/") return pathname === "/";
-  return pathname === href || pathname.startsWith(`${href}/`);
+  if (href === "/account") return accountPrefixes.some((p) => matches(pathname, p));
+  return matches(pathname, href);
 }
 
 /**
@@ -30,7 +37,7 @@ export function MobileNav() {
   return (
     <nav
       aria-label={t("nav.home")}
-      className="safe-bottom fixed inset-x-0 bottom-0 z-30 border-t border-border bg-surface/95 backdrop-blur md:hidden"
+      className="safe-bottom fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface/95 backdrop-blur md:hidden"
     >
       <ul className="mx-auto flex max-w-lg items-stretch justify-between px-2">
         {tabs.map(({ href, key, icon: Icon, primary }) => {

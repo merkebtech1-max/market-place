@@ -1,5 +1,7 @@
 {
-  "brand": { "name": "Merkeb Market" },
+  "brand": {
+    "name": "Merkeb Market"
+  },
   "nav": {
     "home": "Home",
     "search": "Search",
@@ -14,7 +16,8 @@
     "signIn": "Sign in",
     "sellItem": "Sell an item",
     "sellShort": "Sell",
-    "notifications": "Notifications"
+    "notifications": "Notifications",
+    "logout": "Log out"
   },
   "common": {
     "loading": "Loading…",
@@ -53,8 +56,16 @@
     "for_parts": "For parts"
   },
   "home": {
-    "heroTitle": "Buy and sell locally, the trusted way",
-    "heroSubtitle": "Verified sellers. Real prices. Meet safely near you.",
+    "heroTitle": "Buy & Sell Locally. Trade with Trust.",
+    "heroSubtitle": "Verified sellers. Real prices. Safe deals.",
+    "getStarted": "Get Started",
+    "login": "Login",
+    "createAccount": "Create Account",
+    "browseListings": "Browse listings",
+    "slide1Title": "Trade Smart. Save More.",
+    "slide2Title": "Buy. Sell. Connect.",
+    "slide3Title": "Quality Used Products for Business.",
+    "slide4Title": "Your B2B Second-Hand Marketplace.",
     "promotedTitle": "Promoted",
     "categoriesTitle": "Browse categories",
     "feedTitle": "Fresh in {location}",
@@ -99,7 +110,125 @@
     "responseRate": "{rate}% response rate",
     "responseTime": "Usually replies {time}",
     "memberSince": "Member since {date}",
-    "views": "{count} views"
+    "views": "{count} views",
+    "condition": "Condition",
+    "category": "Category",
+    "nearby": "Near {location}",
+    "nearbyBody": "More items listed around this area"
+  },
+  "sell": {
+    "eyebrow": "Sell on Merkeb",
+    "title": "List your item",
+    "subtitle": "Choose a category, add clear photos and details, then set a fair local price.",
+    "stepsLabel": "Listing steps",
+    "stepCategory": "Category",
+    "stepDetails": "Details",
+    "stepPricing": "Price & place",
+    "stepReview": "Review",
+    "categoryTitle": "What are you selling?",
+    "categoryBody": "Pick the category that best matches your item so buyers can find it.",
+    "detailsTitle": "Describe your item",
+    "detailsBody": "Honest titles and photos help your listing sell faster.",
+    "photos": "Photos",
+    "photosCta": "Add a photo",
+    "photosHint": "Clear daylight photos work best. You can add more later.",
+    "itemTitle": "Title",
+    "itemTitlePlaceholder": "e.g. iPhone 13 Pro 128GB — excellent condition",
+    "description": "Description",
+    "descriptionPlaceholder": "Include brand, age, what’s included, and any flaws.",
+    "descriptionHint": "At least 20 characters.",
+    "pricingTitle": "Price, condition & location",
+    "pricingBody": "Set your asking price and where buyers can meet you.",
+    "price": "Price",
+    "condition": "Condition",
+    "locationTitle": "Meetup location",
+    "city": "City",
+    "cityPlaceholder": "Select a city",
+    "subcity": "Sub-city / area",
+    "subcityPlaceholder": "Select an area",
+    "landmark": "Landmark (optional)",
+    "landmarkPlaceholder": "Near Edna Mall",
+    "landmarkHint": "Helps buyers recognize a safe public meetup spot.",
+    "reviewTitle": "Review before publishing",
+    "reviewBody": "Double-check the details. You can edit after publishing from your dashboard.",
+    "noPhoto": "No photo added",
+    "signInRequired": "Sign in to publish your listing. Your draft stays on this screen until you continue.",
+    "continue": "Continue",
+    "publish": "Publish listing",
+    "successTitle": "Listing submitted",
+    "successBody": "Your item is ready for review. It will appear in search once approved.",
+    "backHome": "Back to home",
+    "listAnother": "List another item",
+    "errors": {
+      "category": "Select a category to continue.",
+      "title": "Enter a title of at least 4 characters.",
+      "description": "Add a description of at least 20 characters.",
+      "price": "Enter a valid price in ETB.",
+      "condition": "Select the item’s condition.",
+      "city": "Select a city.",
+      "subcity": "Select a sub-city or area."
+    }
+  },
+  "auth": {
+    "loginTab": "Log in",
+    "signupTab": "Create account",
+    "name": "Full name",
+    "namePlaceholder": "Abebe Bekele",
+    "phone": "Phone number",
+    "password": "Password",
+    "confirmPassword": "Confirm password",
+    "pin": "6-digit PIN",
+    "confirmPin": "Confirm PIN",
+    "otp": "4-digit code",
+    "passwordMismatch": "Passwords don't match.",
+    "pinMismatch": "PINs don't match.",
+    "pinInvalid": "Enter your 6-digit PIN.",
+    "otpInvalid": "Enter the 4-digit code.",
+    "sendOtp": "Send OTP",
+    "verifyOtp": "Verify",
+    "phoneStepBody": "Enter your phone number to get started.",
+    "otpStepBody": "Enter the code sent to {phone}.",
+    "createAccountCta": "Create",
+    "loginCta": "Log in",
+    "forgotPassword": "Forgot password",
+    "forgotSubmit": "Continue",
+    "forgotSent": "If an account matches, we'll help you reset your PIN.",
+    "backToLogin": "Back to log in"
+  },
+  "placeholder": {
+    "comingSoon": "This screen is on the build roadmap and isn't implemented yet.",
+    "signInTitle": "Sign in",
+    "signInBody": "Phone + SMS OTP sign-in isn't built yet.",
+    "savedTitle": "Saved items",
+    "savedBody": "Items and searches you save will show up here.",
+    "notificationsTitle": "Notifications",
+    "notificationsBody": "Price drops, offers and moderation updates will show up here.",
+    "sellerProfileTitle": "Seller profile",
+    "servicesTitle": "Service directory",
+    "servicesBody": "Electricians, plumbers, tutors and more — coming soon.",
+    "serviceProfileTitle": "Service profile",
+    "settingsTitle": "Settings",
+    "sellTitle": "Sell an item",
+    "sellBody": "The listing composer isn't built yet.",
+    "messageThreadTitle": "Conversation",
+    "messagesTitle": "Messages",
+    "messagesBody": "Your buyer and seller conversations will show up here.",
+    "dashboardTitle": "Seller dashboard",
+    "dashboardOffersTitle": "Offers",
+    "dashboardAnalyticsTitle": "Analytics",
+    "dashboardBillingTitle": "Billing",
+    "dashboardBoostsTitle": "Boosts",
+    "dashboardListingsTitle": "My listings",
+    "adminUsersTitle": "Users",
+    "adminTaxonomyTitle": "Category & attribute editor",
+    "adminRevenueTitle": "Revenue dashboard",
+    "adminPricingTitle": "Pricing & packages",
+    "adminPromotionsTitle": "Promotion inventory",
+    "adminOverviewTitle": "Admin overview",
+    "adminModerationTitle": "Moderation queue",
+    "adminFeatureFlagsTitle": "Feature flags",
+    "adminAuditLogTitle": "Audit log",
+    "adminEntitlementsTitle": "Manual entitlements"
   },
   "states": {
     "emptySearchTitle": "No listings match your filters",
@@ -114,5 +243,247 @@
     "notFoundBody": "The page you're looking for doesn't exist or may have moved.",
     "offlineTitle": "You're offline",
     "offlineBody": "Some content may be out of date until you're back online."
+  },
+  "chat": {
+    "title": "Messages",
+    "back": "Back",
+    "tab": {
+      "all": "All",
+      "buying": "Buying",
+      "selling": "Selling"
+    },
+    "emptyTitle": "No conversations yet",
+    "emptyBody": "When you message a seller or a buyer writes to you, it shows up here.",
+    "you": "You",
+    "unread": "{count} unread",
+    "offerPreview": "Made an offer",
+    "notFound": "Conversation not found",
+    "safety": "Meet in a public place and pay cash in person. Never send money in advance.",
+    "offer": "Offer",
+    "noPayment": "Payment never goes through Merkeb — pay cash in person.",
+    "accept": "Accept",
+    "decline": "Decline",
+    "reserved": "Listing reserved for 48 hours",
+    "status": {
+      "pending": "Waiting for reply",
+      "accepted": "Accepted",
+      "declined": "Declined",
+      "countered": "Countered"
+    },
+    "quick": {
+      "available": "Is this still available?",
+      "lastPrice": "What's your last price?",
+      "whereMeet": "Where can we meet?",
+      "canMeet": "Can we meet today?",
+      "yesAvailable": "Yes, it's available",
+      "priceFirm": "The price is firm",
+      "comeSee": "Come and see it",
+      "sold": "Sorry, it's sold"
+    },
+    "placeholder": "Write a message",
+    "send": "Send",
+    "cancel": "Cancel",
+    "makeOffer": "Make offer",
+    "counter": "Counter",
+    "wasOffer": "Was {amount}",
+    "offerSheet": {
+      "titleOffer": "Make an offer",
+      "titleCounter": "Counter offer",
+      "sendOffer": "Send offer",
+      "sendCounter": "Send counter",
+      "listPrice": "Listed price",
+      "theirOffer": "Their offer",
+      "amount": "Your amount",
+      "errInvalid": "Enter an amount in birr, for example 4500",
+      "errTooHigh": "Your offer can't be higher than the listed price"
+    },
+    "startChat": "Say hello and start the conversation"
+  },
+  "report": {
+    "short": "Report",
+    "title": "Report",
+    "subtitle": "Our moderators will review this.",
+    "target": {
+      "listing": "Listing",
+      "user": "User",
+      "message": "Message"
+    },
+    "reason": "Reason",
+    "reasons": {
+      "counterfeit": "Counterfeit",
+      "stolen": "Stolen goods",
+      "prohibited": "Prohibited item",
+      "scam": "Scam",
+      "abuse": "Abuse or harassment",
+      "wrongCategory": "Wrong category"
+    },
+    "details": "Add details (optional)",
+    "detailsHint": "What happened?",
+    "send": "Send report",
+    "done": "Done",
+    "thanks": "Thanks. Our moderators will review your report.",
+    "errReason": "Choose a reason",
+    "listingCta": "Report this listing"
+  },
+  "review": {
+    "title": "Rate {name}",
+    "rating": "Rating",
+    "starLabel": "{count} stars",
+    "comment": "Comment (optional)",
+    "commentHint": "How was the deal?",
+    "submit": "Submit review",
+    "later": "Not now",
+    "once": "You can review each deal once.",
+    "errStars": "Choose 1 to 5 stars",
+    "prompt": "How was your deal with {name}?",
+    "cta": "Leave a review",
+    "thanks": "Thanks for your review!",
+    "short": "Review"
+  },
+  "meetup": {
+    "short": "Meet",
+    "title": "Suggest a meeting place",
+    "subtitle": "Pick a public place that is busy and well lit.",
+    "places": {
+      "ednaMall": {
+        "name": "Edna Mall, Bole",
+        "note": "Shopping mall · busy, well lit"
+      },
+      "police": {
+        "name": "Bole Police Station",
+        "note": "Police station · safest option"
+      },
+      "bank": {
+        "name": "Dashen Bank, Bole branch",
+        "note": "Bank · security cameras"
+      },
+      "square": {
+        "name": "Bole Medhanialem square",
+        "note": "Public square · daytime only"
+      }
+    },
+    "other": "Another place",
+    "otherHint": "Type a public place",
+    "when": "Date and time",
+    "send": "Send proposal",
+    "errPlace": "Choose a public place",
+    "errWhen": "Choose a date and time",
+    "noHome": "Never share your home address. Choose a public place.",
+    "proposal": "Meetup proposal",
+    "accepted": "Accepted",
+    "waiting": "Waiting for reply"
+  },
+  "notif": {
+    "title": "Notifications",
+    "tab": {
+      "feed": "Feed",
+      "settings": "Settings"
+    },
+    "markAllRead": "Mark all read",
+    "unread": "Unread",
+    "emptyTitle": "You're all caught up",
+    "emptyBody": "Offers, messages and price drops will show up here.",
+    "prefs": "What to notify me about",
+    "types": {
+      "message": "New messages",
+      "offer": "Offers and counter-offers",
+      "priceDrop": "Price drops on saved items",
+      "moderation": "Listing moderation updates",
+      "meetup": "Meetup proposals"
+    },
+    "push": {
+      "title": "Push notifications",
+      "body": "Get alerts even when Merkeb is closed.",
+      "enable": "Turn on notifications",
+      "on": "Push notifications are on.",
+      "denied": "Notifications are blocked. Allow them in your browser settings.",
+      "unsupported": "This browser doesn't support push notifications."
+    },
+    "items": {
+      "offerReceived": "{name} offered ETB {amount}",
+      "newMessage": "New message from {name}",
+      "meetupProposed": "{name} suggested meeting at {place}",
+      "priceDrop": "{title} dropped to ETB {amount}",
+      "listingApproved": "Your listing \"{title}\" is live"
+    }
+  },
+  "account": {
+    "settings": "Settings",
+    "myListings": "My listings",
+    "saved": "Saved listings",
+    "messages": "Messages",
+    "support": "Support",
+    "signOut": "Sign out",
+    "viewAccount": "View account",
+    "signedOutTitle": "Welcome to Merkeb",
+    "signedOutBody": "Sign in to sell, save and message.",
+    "createAccount": "Create account"
+  },
+  "support": {
+    "title": "Support",
+    "subtitle": "Help with buying and selling on Merkeb.",
+    "topics": {
+      "safety": {
+        "title": "Stay safe",
+        "body": "Meet in a public place and pay cash in person. Never send money in advance."
+      },
+      "offers": {
+        "title": "Offers and payment",
+        "body": "Payment never goes through Merkeb. Agree a price in chat, then pay when you meet."
+      },
+      "report": {
+        "title": "Report a problem",
+        "body": "Use the Report button in a chat or on a listing and our moderators will review it."
+      }
+    }
+  },
+  "dashboard": {
+    "title": "Seller dashboard",
+    "welcome": "Welcome back, {name}",
+    "newListing": "Post a new listing",
+    "listingsTitle": "My listings",
+    "tabs": {
+      "all": "All",
+      "draft": "Drafts",
+      "active": "Active",
+      "reserved": "Reserved",
+      "sold": "Sold"
+    },
+    "status": {
+      "draft": "Draft",
+      "active": "Active",
+      "reserved": "Reserved",
+      "sold": "Sold"
+    },
+    "emptyTitle": "Nothing here yet",
+    "empty": {
+      "all": "Listings you post will show up here.",
+      "draft": "Unfinished listings are saved as drafts.",
+      "active": "Live listings will show up here.",
+      "reserved": "Listings held for a buyer will show up here.",
+      "sold": "Items you've sold will show up here."
+    },
+    "stats": "{views} views · {saves} saves",
+    "edit": "Edit",
+    "publish": "Publish",
+    "markSold": "Mark as sold",
+    "soldConfirmTitle": "Mark as sold?",
+    "soldConfirmBody": "\"{title}\" will be marked as sold and can't be edited afterwards.",
+    "soldDone": "\"{title}\" is marked as sold.",
+    "publishedDone": "\"{title}\" is now live.",
+    "signInTitle": "Sign in to manage your listings",
+    "signInBody": "Sign in to see and manage what you're selling.",
+    "editTitle": "Edit listing",
+    "fieldTitle": "Title",
+    "fieldPrice": "Price",
+    "fieldDescription": "Description",
+    "save": "Save changes",
+    "errTitle": "Enter a title",
+    "errPrice": "Enter a price in birr, for example 4500",
+    "editSoldTitle": "This listing is sold",
+    "editSoldBody": "Sold listings can't be edited.",
+    "editMissingTitle": "Listing not found",
+    "editMissingBody": "It may have been removed.",
+    "backToListings": "Back to my listings"
   }
 }
