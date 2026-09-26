@@ -1,5 +1,7 @@
 {
-  "brand": { "name": "Merkeb Market" },
+  "brand": {
+    "name": "Merkeb Market"
+  },
   "nav": {
     "home": "Home",
     "search": "Search",
@@ -241,5 +243,247 @@
     "notFoundBody": "The page you're looking for doesn't exist or may have moved.",
     "offlineTitle": "You're offline",
     "offlineBody": "Some content may be out of date until you're back online."
+  },
+  "chat": {
+    "title": "Messages",
+    "back": "Back",
+    "tab": {
+      "all": "All",
+      "buying": "Buying",
+      "selling": "Selling"
+    },
+    "emptyTitle": "No conversations yet",
+    "emptyBody": "When you message a seller or a buyer writes to you, it shows up here.",
+    "you": "You",
+    "unread": "{count} unread",
+    "offerPreview": "Made an offer",
+    "notFound": "Conversation not found",
+    "safety": "Meet in a public place and pay cash in person. Never send money in advance.",
+    "offer": "Offer",
+    "noPayment": "Payment never goes through Merkeb — pay cash in person.",
+    "accept": "Accept",
+    "decline": "Decline",
+    "reserved": "Listing reserved for 48 hours",
+    "status": {
+      "pending": "Waiting for reply",
+      "accepted": "Accepted",
+      "declined": "Declined",
+      "countered": "Countered"
+    },
+    "quick": {
+      "available": "Is this still available?",
+      "lastPrice": "What's your last price?",
+      "whereMeet": "Where can we meet?",
+      "canMeet": "Can we meet today?",
+      "yesAvailable": "Yes, it's available",
+      "priceFirm": "The price is firm",
+      "comeSee": "Come and see it",
+      "sold": "Sorry, it's sold"
+    },
+    "placeholder": "Write a message",
+    "send": "Send",
+    "cancel": "Cancel",
+    "makeOffer": "Make offer",
+    "counter": "Counter",
+    "wasOffer": "Was {amount}",
+    "offerSheet": {
+      "titleOffer": "Make an offer",
+      "titleCounter": "Counter offer",
+      "sendOffer": "Send offer",
+      "sendCounter": "Send counter",
+      "listPrice": "Listed price",
+      "theirOffer": "Their offer",
+      "amount": "Your amount",
+      "errInvalid": "Enter an amount in birr, for example 4500",
+      "errTooHigh": "Your offer can't be higher than the listed price"
+    },
+    "startChat": "Say hello and start the conversation"
+  },
+  "report": {
+    "short": "Report",
+    "title": "Report",
+    "subtitle": "Our moderators will review this.",
+    "target": {
+      "listing": "Listing",
+      "user": "User",
+      "message": "Message"
+    },
+    "reason": "Reason",
+    "reasons": {
+      "counterfeit": "Counterfeit",
+      "stolen": "Stolen goods",
+      "prohibited": "Prohibited item",
+      "scam": "Scam",
+      "abuse": "Abuse or harassment",
+      "wrongCategory": "Wrong category"
+    },
+    "details": "Add details (optional)",
+    "detailsHint": "What happened?",
+    "send": "Send report",
+    "done": "Done",
+    "thanks": "Thanks. Our moderators will review your report.",
+    "errReason": "Choose a reason",
+    "listingCta": "Report this listing"
+  },
+  "review": {
+    "title": "Rate {name}",
+    "rating": "Rating",
+    "starLabel": "{count} stars",
+    "comment": "Comment (optional)",
+    "commentHint": "How was the deal?",
+    "submit": "Submit review",
+    "later": "Not now",
+    "once": "You can review each deal once.",
+    "errStars": "Choose 1 to 5 stars",
+    "prompt": "How was your deal with {name}?",
+    "cta": "Leave a review",
+    "thanks": "Thanks for your review!",
+    "short": "Review"
+  },
+  "meetup": {
+    "short": "Meet",
+    "title": "Suggest a meeting place",
+    "subtitle": "Pick a public place that is busy and well lit.",
+    "places": {
+      "ednaMall": {
+        "name": "Edna Mall, Bole",
+        "note": "Shopping mall · busy, well lit"
+      },
+      "police": {
+        "name": "Bole Police Station",
+        "note": "Police station · safest option"
+      },
+      "bank": {
+        "name": "Dashen Bank, Bole branch",
+        "note": "Bank · security cameras"
+      },
+      "square": {
+        "name": "Bole Medhanialem square",
+        "note": "Public square · daytime only"
+      }
+    },
+    "other": "Another place",
+    "otherHint": "Type a public place",
+    "when": "Date and time",
+    "send": "Send proposal",
+    "errPlace": "Choose a public place",
+    "errWhen": "Choose a date and time",
+    "noHome": "Never share your home address. Choose a public place.",
+    "proposal": "Meetup proposal",
+    "accepted": "Accepted",
+    "waiting": "Waiting for reply"
+  },
+  "notif": {
+    "title": "Notifications",
+    "tab": {
+      "feed": "Feed",
+      "settings": "Settings"
+    },
+    "markAllRead": "Mark all read",
+    "unread": "Unread",
+    "emptyTitle": "You're all caught up",
+    "emptyBody": "Offers, messages and price drops will show up here.",
+    "prefs": "What to notify me about",
+    "types": {
+      "message": "New messages",
+      "offer": "Offers and counter-offers",
+      "priceDrop": "Price drops on saved items",
+      "moderation": "Listing moderation updates",
+      "meetup": "Meetup proposals"
+    },
+    "push": {
+      "title": "Push notifications",
+      "body": "Get alerts even when Merkeb is closed.",
+      "enable": "Turn on notifications",
+      "on": "Push notifications are on.",
+      "denied": "Notifications are blocked. Allow them in your browser settings.",
+      "unsupported": "This browser doesn't support push notifications."
+    },
+    "items": {
+      "offerReceived": "{name} offered ETB {amount}",
+      "newMessage": "New message from {name}",
+      "meetupProposed": "{name} suggested meeting at {place}",
+      "priceDrop": "{title} dropped to ETB {amount}",
+      "listingApproved": "Your listing \"{title}\" is live"
+    }
+  },
+  "account": {
+    "settings": "Settings",
+    "myListings": "My listings",
+    "saved": "Saved listings",
+    "messages": "Messages",
+    "support": "Support",
+    "signOut": "Sign out",
+    "viewAccount": "View account",
+    "signedOutTitle": "Welcome to Merkeb",
+    "signedOutBody": "Sign in to sell, save and message.",
+    "createAccount": "Create account"
+  },
+  "support": {
+    "title": "Support",
+    "subtitle": "Help with buying and selling on Merkeb.",
+    "topics": {
+      "safety": {
+        "title": "Stay safe",
+        "body": "Meet in a public place and pay cash in person. Never send money in advance."
+      },
+      "offers": {
+        "title": "Offers and payment",
+        "body": "Payment never goes through Merkeb. Agree a price in chat, then pay when you meet."
+      },
+      "report": {
+        "title": "Report a problem",
+        "body": "Use the Report button in a chat or on a listing and our moderators will review it."
+      }
+    }
+  },
+  "dashboard": {
+    "title": "Seller dashboard",
+    "welcome": "Welcome back, {name}",
+    "newListing": "Post a new listing",
+    "listingsTitle": "My listings",
+    "tabs": {
+      "all": "All",
+      "draft": "Drafts",
+      "active": "Active",
+      "reserved": "Reserved",
+      "sold": "Sold"
+    },
+    "status": {
+      "draft": "Draft",
+      "active": "Active",
+      "reserved": "Reserved",
+      "sold": "Sold"
+    },
+    "emptyTitle": "Nothing here yet",
+    "empty": {
+      "all": "Listings you post will show up here.",
+      "draft": "Unfinished listings are saved as drafts.",
+      "active": "Live listings will show up here.",
+      "reserved": "Listings held for a buyer will show up here.",
+      "sold": "Items you've sold will show up here."
+    },
+    "stats": "{views} views · {saves} saves",
+    "edit": "Edit",
+    "publish": "Publish",
+    "markSold": "Mark as sold",
+    "soldConfirmTitle": "Mark as sold?",
+    "soldConfirmBody": "\"{title}\" will be marked as sold and can't be edited afterwards.",
+    "soldDone": "\"{title}\" is marked as sold.",
+    "publishedDone": "\"{title}\" is now live.",
+    "signInTitle": "Sign in to manage your listings",
+    "signInBody": "Sign in to see and manage what you're selling.",
+    "editTitle": "Edit listing",
+    "fieldTitle": "Title",
+    "fieldPrice": "Price",
+    "fieldDescription": "Description",
+    "save": "Save changes",
+    "errTitle": "Enter a title",
+    "errPrice": "Enter a price in birr, for example 4500",
+    "editSoldTitle": "This listing is sold",
+    "editSoldBody": "Sold listings can't be edited.",
+    "editMissingTitle": "Listing not found",
+    "editMissingBody": "It may have been removed.",
+    "backToListings": "Back to my listings"
   }
 }

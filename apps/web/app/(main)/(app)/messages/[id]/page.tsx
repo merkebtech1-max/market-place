@@ -1,6 +1,13 @@
-import { PlaceholderPage } from "@/components/layout/PlaceholderPage";
-import { T } from "@/il8n/T";
+"use client";
 
-export default function MessageThreadPage() {
-  return <PlaceholderPage title={<T k="placeholder.messageThreadTitle" />} />;
+import { Suspense, use } from "react";
+import { Thread } from "@/features/message/components/Thread";
+
+export default function MessageThreadPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  return (
+    <Suspense>
+      <Thread id={id} />
+    </Suspense>
+  );
 }

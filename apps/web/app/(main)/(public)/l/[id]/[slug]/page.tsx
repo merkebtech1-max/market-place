@@ -6,6 +6,7 @@ import { ButtonLink } from "@/components/ui/Button";
 import { MapPinIcon, ShareIcon, ShieldIcon } from "@/components/ui/Icon";
 import { ListingGallery } from "@/features/listings/components/ListingGallery";
 import { ListingCard } from "@/features/listings/components/ListingsCard";
+import { ReportListingButton } from "@/features/message/components/ReportListingButton";
 import { Price } from "@/features/listings/components/Price";
 import { SellerHeader } from "@/features/profiles/components/SellerHeader";
 import { T } from "@/il8n/T";
@@ -61,17 +62,12 @@ export default async function ListingDetailPage({ params }: DetailPageProps) {
 
   return (
     <Container className="py-4 sm:py-6">
-      <div className="grid gap-6 md:grid-cols-2 md:items-start">
+      <div className="grid grid-cols-2 items-start gap-3 sm:gap-6">
         <ListingGallery images={listing.images} title={listing.title} />
-        <div className="hidden md:block">
-          <ListingSummary listing={listing} />
-        </div>
+        <ListingSummary listing={listing} />
       </div>
 
       <div className="mt-6 space-y-6 md:mt-8">
-        <div className="space-y-4 md:hidden">
-          <ListingSummary listing={listing} />
-        </div>
 
         <section aria-labelledby="description-heading" className="space-y-2">
           <h2 id="description-heading" className="text-base font-semibold text-ink">
@@ -159,7 +155,7 @@ export default async function ListingDetailPage({ params }: DetailPageProps) {
 
 function ListingSummary({ listing, className }: { listing: Listing; className?: string }) {
   return (
-    <div className={cn("space-y-4 rounded-card border border-border bg-surface p-4 shadow-elevation-1", className)}>
+    <div className={cn("min-w-0 space-y-3 rounded-card border border-border bg-surface p-2.5 shadow-elevation-1 sm:space-y-4 sm:p-4", className)}>
       <div className="flex flex-wrap gap-1.5">
         {listing.status === "reserved" && (
           <Badge variant="reserved">
@@ -207,11 +203,11 @@ function ListingSummary({ listing, className }: { listing: Listing; className?: 
         </span>
       </div>
 
-      <div className="grid grid-cols-1 gap-2 xs:grid-cols-2">
-        <ButtonLink href="/messages" size="lg" className="whitespace-normal px-3 text-center text-sm">
+      <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
+        <ButtonLink href={`/messages?listing=${listing.id}`} size="lg" className="whitespace-normal px-1.5 text-center text-xs sm:px-3 sm:text-sm">
           <T k="listing.messageSeller" />
         </ButtonLink>
-        <ButtonLink href="/messages" variant="outline" size="lg" className="whitespace-normal px-3 text-center text-sm">
+        <ButtonLink href={`/messages/l-${listing.id}?offer=1`} variant="outline" size="lg" className="whitespace-normal px-1.5 text-center text-xs sm:px-3 sm:text-sm">
           <T k="listing.makeOffer" />
         </ButtonLink>
       </div>
@@ -223,6 +219,7 @@ function ListingSummary({ listing, className }: { listing: Listing; className?: 
         <ShareIcon className="h-4 w-4" />
         <T k="common.share" />
       </button>
+      <ReportListingButton />
 
       <div className="border-t border-border pt-4">
         <SellerHeader seller={listing.seller} />

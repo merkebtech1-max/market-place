@@ -2,20 +2,18 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { useSavedIds } from "@/features/listings/saved";
+import { usePathname } from "next/navigation";
 import { ButtonLink } from "@/components/ui/Button";
-import { Avatar } from "@/components/ui/Avatar";
+import { AccountMenu } from "@/components/layout/AccountMenu";
 import {
   BellIcon,
   CartIcon,
   ChevronDownIcon,
   ChevronLeftIcon,
-  LogOutIcon,
   MapPinIcon,
   PlusCircleIcon,
-  UserIcon,
 } from "@/components/ui/Icon";
-import { useSession } from "@/features/auth/session";
 import { SearchInput } from "@/features/search/components/SearchInput";
 import { localeShortLabels, locales } from "@/il8n/config";
 import { useLanguage, useTranslations } from "@/il8n/LanguageProvider";
@@ -69,14 +67,20 @@ function NotificationsButton() {
 
 function CartButton() {
   const t = useTranslations();
+  const count = useSavedIds().length;
 
   return (
     <Link
       href="/saved"
       aria-label={t("nav.saved")}
-      className="tap-target flex items-center justify-center rounded-full text-ink-muted hover:bg-ink/5 hover:text-ink"
+      className="tap-target relative flex items-center justify-center rounded-full text-ink-muted hover:bg-ink/5 hover:text-ink"
     >
       <CartIcon className="h-5.5 w-5.5" />
+      {count > 0 && (
+        <span className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-semibold leading-none text-white">
+          {count}
+        </span>
+      )}
     </Link>
   );
 }
@@ -100,15 +104,8 @@ function LocationIndicator() {
 
 export function Header() {
   const t = useTranslations();
-  const router = useRouter();
   const pathname = usePathname();
-  const { user, isAuthenticated, signOut } = useSession();
   const isHome = pathname === "/home";
-
-  function handleLogout() {
-    signOut();
-    router.push("/sign-in?mode=login");
-  }
 
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-surface/95 backdrop-blur supports-backdrop-filter:bg-surface/80">
@@ -148,35 +145,8 @@ export function Header() {
             <PlusCircleIcon className="h-4 w-4" />
             <span className="hidden sm:inline">{t("header.sellShort")}</span>
           </ButtonLink>
-          {isAuthenticated && user ? (
-            <Link
-              href="/dashboard"
-              aria-label={t("nav.account")}
-              title={user.name}
-              className="tap-target flex items-center rounded-full transition-transform hover:scale-[1.04] active:scale-[0.98]"
-            >
-              <Avatar name={user.name} size="md" mode="letter" />
-            </Link>
-          ) : (
-            <Link
-              href="/sign-in?mode=login"
-              aria-label={t("header.signIn")}
-              className="tap-target flex items-center justify-center rounded-full text-ink-muted hover:bg-ink/5 hover:text-ink"
-            >
-              <UserIcon className="h-5.5 w-5.5" />
-            </Link>
-          )}
+          <AccountMenu />
           <LanguageSwitcher className="sm:hidden" />
-          {isAuthenticated && user && (
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="tap-target flex shrink-0 items-center gap-1 rounded-control bg-primary px-2 py-1.5 text-sm font-medium text-white hover:bg-primary/90"
-            >
-              <LogOutIcon className="h-5 w-5" />
-              <span className="hidden xs:inline">{t("header.logout")}</span>
-            </button>
-          )}
         </div>
       </div>
 
