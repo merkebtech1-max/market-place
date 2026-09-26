@@ -1,6 +1,10 @@
-import { PlaceholderPage } from "@/components/layout/PlaceholderPage";
-import { T } from "@/il8n/T";
+import { Suspense } from "react";
+import { SellerListings } from "@/features/seller/components/SellerListings";
 
 export default function DashboardListingsPage() {
-  return <PlaceholderPage title={<T k="placeholder.dashboardListingsTitle" />} />;
+  return (
+    <Suspense>
+      <SellerListings />
+    </Suspense>
+  );
 }
