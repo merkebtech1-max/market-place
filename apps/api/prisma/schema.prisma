@@ -186,6 +186,7 @@ model User {
   sellerThreads Thread[] @relation("ThreadSeller")
 
   messages Message[]
+  listingViews ListingView[]
 
   @@index([status])
   @@index([cityId])
@@ -324,6 +325,7 @@ model Listing {
 
   ratings Rating[]
   reports Report[]
+  views ListingView[]
 
   @@index([sellerId])
   @@index([cityId])
@@ -343,7 +345,7 @@ model ListingImage {
 
   listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
 
-  @@index([listingId])
+  @@index([listingId, position])
 }
 
 model SavedListing {
@@ -635,4 +637,18 @@ model AuditLog {
 
   @@index([actorId])
   @@index([createdAt])
+}
+
+
+model ListingView {
+  userId    String
+  listingId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@id([userId, listingId])
+  @@index([listingId])
+  @@index([userId])
 }

@@ -9,8 +9,10 @@ import { TransactionsModule } from './transactions/transactions.module.js';
 import { ModerationModule } from './moderation/moderation.module.js';
 import { RatingsModule } from './ratings/ratings.module.js';
 import { AdminModule } from './admin/admin.module.js';
+import { CategoriesModule } from './categories/categories.module.js';
+import { LocationsModule } from './locations/locations.module.js';
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true }), PrismaModule, AuthModule, UsersCatalogModule, ListingsModule, MessagingModule, TransactionsModule, ModerationModule, RatingsModule, AdminModule],
+  imports: [ConfigModule.forRoot({ isGlobal: true }), PrismaModule, AuthModule, UsersCatalogModule, ListingsModule, MessagingModule, TransactionsModule, ModerationModule, RatingsModule, AdminModule, CategoriesModule, LocationsModule],
 })
 export class AppModule {}

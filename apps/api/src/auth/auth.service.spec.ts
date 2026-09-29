@@ -1,6 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { OtpService } from './otp/otp.service.js';
+import { JwtTokenService } from './jwt/jwt-token.service.js';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -10,6 +12,8 @@ describe('AuthService', () => {
       providers: [
         AuthService,
         { provide: PrismaService, useValue: {} },
+        { provide: OtpService, useValue: {} },
+        { provide: JwtTokenService, useValue: {} },
       ],
     }).compile();
 
