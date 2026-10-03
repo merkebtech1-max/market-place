@@ -21,3 +21,21 @@ export function getReservationDurationHours(config: { get(key: string, defaultVa
 
   return parsed;
 }
+
+/**
+ * Returns the secret used to derive deterministic QR tokens.
+ *
+ * Must be a sufficiently long, random value provided via the environment.
+ * Never hardcoded, never exposed to the frontend. Throws if missing or
+ * blank so misconfiguration fails fast instead of silently weakening
+ * token security.
+ */
+export function getQrTokenSecret(config: { get(key: string, defaultValue?: string): string | undefined }): string {
+  const secret = config.get('QR_TOKEN_SECRET');
+
+  if (!secret || secret.trim().length === 0) {
+    throw new Error('QR_TOKEN_SECRET is not configured. Set it to a long, random secret in the environment.');
+  }
+
+  return secret;
+}

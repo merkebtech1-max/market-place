@@ -11,8 +11,9 @@ import { RatingsModule } from './ratings/ratings.module.js';
 import { AdminModule } from './admin/admin.module.js';
 import { CategoriesModule } from './categories/categories.module.js';
 import { LocationsModule } from './locations/locations.module.js';
+import { JobsModule } from './jobs/jobs.module.js';
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true }), PrismaModule, AuthModule, UsersCatalogModule, ListingsModule, MessagingModule, TransactionsModule, ModerationModule, RatingsModule, AdminModule, CategoriesModule, LocationsModule],
+  imports: [ConfigModule.forRoot({ isGlobal: true }), PrismaModule, AuthModule, UsersCatalogModule, ListingsModule, MessagingModule, TransactionsModule, ModerationModule, RatingsModule, AdminModule, CategoriesModule, LocationsModule, JobsModule],
 })
 export class AppModule {}
