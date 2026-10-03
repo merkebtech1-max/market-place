@@ -7,7 +7,7 @@ import { useTranslations } from "@/il8n/LanguageProvider";
 import { cn } from "@/lib/utils";
 
 const tabs = [
-  { href: "/", key: "home", icon: HomeIcon, primary: false },
+  { href: "/home", key: "home", icon: HomeIcon, primary: false },
   { href: "/search", key: "search", icon: SearchIcon, primary: false },
   { href: "/sell", key: "sell", icon: PlusCircleIcon, primary: true },
   { href: "/messages", key: "messages", icon: InboxIcon, primary: false },
@@ -15,7 +15,6 @@ const tabs = [
 ] as const;
 
 function isActive(pathname: string, href: string) {
-  if (href === "/") return pathname === "/";
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
@@ -30,7 +29,7 @@ export function MobileNav() {
   return (
     <nav
       aria-label={t("nav.home")}
-      className="safe-bottom fixed inset-x-0 bottom-0 z-30 border-t border-border bg-surface/95 backdrop-blur md:hidden"
+      className="safe-bottom fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface/95 backdrop-blur md:hidden"
     >
       <ul className="mx-auto flex max-w-lg items-stretch justify-between px-2">
         {tabs.map(({ href, key, icon: Icon, primary }) => {

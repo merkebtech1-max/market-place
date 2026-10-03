@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { ChevronLeftIcon, ChevronRightIcon } from "@/components/ui/Icon";
 import { cn } from "@/lib/utils";
 import type { ListingImage } from "../types";
@@ -15,8 +16,8 @@ export function ListingGallery({ images, title }: { images: ListingImage[]; titl
   }
 
   return (
-    <div className="space-y-2">
-      <div className="relative aspect-4/3 w-full overflow-hidden rounded-card bg-ink/5">
+    <div className="flex flex-col gap-2">
+      <div className="relative aspect-4/3 w-full overflow-hidden rounded-card bg-ink/5 md:max-h-80">
         {image && (
           <Image
             key={image.id}
@@ -25,9 +26,16 @@ export function ListingGallery({ images, title }: { images: ListingImage[]; titl
             fill
             priority
             sizes="(min-width: 1024px) 55vw, 100vw"
-            className="object-cover"
+            className="object-contain"
           />
         )}
+        <Link
+          href="/home"
+          aria-label="Back to home"
+          className="tap-target absolute left-2 top-2 z-10 flex items-center justify-center rounded-full bg-white/90 text-ink shadow-elevation-1"
+        >
+          <ChevronLeftIcon className="h-5 w-5" />
+        </Link>
         {images.length > 1 && (
           <>
             <button
