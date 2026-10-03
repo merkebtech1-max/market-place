@@ -1,8 +1,9 @@
-import { BadRequestException, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
 import { Prisma } from '../../generated/prisma/client.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { ListingStatus, UserStatus } from '../../generated/prisma/enums.js';
 import { ThreadModel } from '../../generated/prisma/models/Thread.js';
+import { BlockCheckService } from '../../users-catalog/services/block-check.service.js';
 
 /** Scalar fields shared by every thread read across the module. */
 export const THREAD_BASE_SELECT = {
@@ -26,7 +27,10 @@ export const THREAD_BASE_SELECT = {
 export class ThreadCreateService {
   private readonly logger = new Logger(ThreadCreateService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly blockCheck: BlockCheckService,
+  ) {}
 
   async createThread(listingId: string, buyerId: string): Promise<ThreadModel> {
     this.logger.log(`[START] Ensuring thread for listing=${listingId} by buyerId=${buyerId}`);
@@ -67,6 +71,14 @@ export class ThreadCreateService {
         throw new BadRequestException('Your account is not active, so you cannot start a conversation.');
       }
 
+      // Blocking blocks interaction in both directions, even if a block row
+      // only exists one way. A block also applies to previously existing
+      // threads, so an existing thread never unlocks a blocked conversation.
+      const blocked = await this.blockCheck.isBlocked(buyerId, listing.sellerId);
+      if (blocked) {
+        throw new ForbiddenException('You cannot contact this user.');
+      }
+
       const existing = await this.findExisting(listingId, buyerId);
       if (existing) {
         this.logger.log(`[SUCCESS] Thread already exists: threadId=${existing.id}`);
@@ -97,7 +109,7 @@ export class ThreadCreateService {
       // above) passes through untouched. Unexpected failures — database
       // outages, Prisma errors — are server faults, not client bad requests:
       // surface a generic 500 and log the real cause server-side only.
-      if (error instanceof NotFoundException || error instanceof BadRequestException) throw error;
+      if (error instanceof NotFoundException || error instanceof BadRequestException || error instanceof ForbiddenException) throw error;
       this.logger.error(`[ERROR] Failed to ensure thread for listing=${listingId}, buyerId=${buyerId} - ${error instanceof Error ? error.message : 'Unknown error'}`);
       throw new InternalServerErrorException('Unable to open a conversation for this listing at this time. Please try again later.');
     }
