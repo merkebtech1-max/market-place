@@ -4,9 +4,8 @@ import { notFound } from "next/navigation";
 import { Container } from "@/components/layout/Container";
 import { CategoryName } from "@/features/catalog/components/CategoryName";
 import { SearchResults } from "@/features/search/components/SearchResults";
-import { applyFilters } from "@/features/search/utils";
+import { getCategories, getListings } from "@/features/listings/api";
 import { T } from "@/il8n/T";
-import { getCategoryBySlug, listings } from "@/lib/mock-data";
 
 type CategoryPageProps = { params: Promise<{ category: string }> };
 
@@ -15,7 +14,7 @@ export const revalidate = 300;
 
 export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
   const { category } = await params;
-  const cat = getCategoryBySlug(category);
+  const cat = (await getCategories().catch(() => [])).find((item) => item.slug === category);
   if (!cat) return { title: "Category not found — Merkeb Market" };
   return {
     title: `${cat.nameEn} for sale — Merkeb Market`,
@@ -25,10 +24,13 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
 
 export default async function CategoryPage({ params }: CategoryPageProps) {
   const { category } = await params;
-  const cat = getCategoryBySlug(category);
+  const cat = (await getCategories().catch(() => [])).find((item) => item.slug === category);
   if (!cat) notFound();
 
-  const results = applyFilters(listings, { category: cat.slug, sort: "relevance" });
+  const { listings: results, meta } = await getListings({ category: cat.slug }).catch(() => ({
+    listings: [],
+    meta: { page: 1, limit: 50, total: 0, totalPages: 0 },
+  }));
 
   return (
     <Container className="py-4 sm:py-6">
@@ -48,7 +50,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
             <CategoryName category={cat} />
           </h1>
           <p className="text-sm text-ink-muted">
-            {results.length} <T k="common.results" />
+            {meta.total} <T k="common.results" />
           </p>
         </div>
       </div>

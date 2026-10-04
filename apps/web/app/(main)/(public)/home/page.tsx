@@ -7,7 +7,7 @@ import { HomeBrowseFilters } from "@/features/listings/components/HomeBrowseFilt
 import { PromotedRail } from "@/features/listings/components/PromotedRail";
 import { SearchIcon } from "@/components/ui/Icon";
 import { T } from "@/il8n/T";
-import { categories, listings } from "@/lib/mock-data";
+import { getCategories, getListings } from "@/features/listings/api";
 
 // Revalidate the feed periodically rather than on every request (SRS §6: SSR + ISR).
 export const revalidate = 60;
@@ -16,10 +16,12 @@ const HOME_SUBCITY = "Bole";
 const HOME_CITY = "Addis Ababa";
 
 /** The functional marketplace home (SRS §6 `/`) — feed, categories, search. Reached via the splash's Get Started button and every in-app "Home" link. */
-export default function MarketplaceHomePage() {
-  const promoted = listings.filter(
-    (l) => l.promotion === "homepage" || l.promotion === "featured" || l.promotion === "urgent"
-  );
+export default async function MarketplaceHomePage() {
+  const [{ listings }, categories] = await Promise.all([
+    getListings().catch(() => ({ listings: [], meta: { page: 1, limit: 50, total: 0, totalPages: 0 } })),
+    getCategories().catch(() => []),
+  ]);
+  const promoted = listings.slice(0, 8);
 
   return (
     <div className="pb-6 md:pb-10">

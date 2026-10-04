@@ -41,7 +41,7 @@
   --color-swap-soft: #dff1f4;
 
   /* Type */
-  --font-sans: var(--font-latin), var(--font-ethiopic), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Segoe UI", "Noto Sans Ethiopic", ui-sans-serif, system-ui, sans-serif;
 
   /* Radius scale (one scale, semantically named) */
   --radius-control: 0.5rem;

@@ -10,7 +10,7 @@ import { ReportListingButton } from "@/features/message/components/ReportListing
 import { Price } from "@/features/listings/components/Price";
 import { SellerHeader } from "@/features/profiles/components/SellerHeader";
 import { T } from "@/il8n/T";
-import { getListingById, getNearbyListings } from "@/lib/mock-data";
+import { getListing, getListings } from "@/features/listings/api";
 import { cn, formatETB, listingHref } from "@/lib/utils";
 import type { Listing } from "@/features/listings/types";
 
@@ -26,7 +26,7 @@ function formatDate(date: string) {
 
 export async function generateMetadata({ params }: DetailPageProps): Promise<Metadata> {
   const { id } = await params;
-  const listing = getListingById(id);
+  const listing = await getListing(id).catch(() => null);
   if (!listing) return { title: "Listing not found — Merkeb Market" };
 
   const price = formatETB(listing.priceCents);
@@ -54,10 +54,12 @@ export async function generateMetadata({ params }: DetailPageProps): Promise<Met
 
 export default async function ListingDetailPage({ params }: DetailPageProps) {
   const { id } = await params;
-  const listing = getListingById(id);
+  const listing = await getListing(id).catch(() => null);
   if (!listing) notFound();
 
-  const nearby = getNearbyListings(listing);
+  const nearby = (await getListings().catch(() => ({ listings: [], meta: { page: 1, limit: 50, total: 0, totalPages: 0 } })))
+    .listings.filter((item) => item.id !== listing.id && item.categoryId === listing.categoryId && item.city === listing.city)
+    .slice(0, 4);
   const nearbyLabel = `${listing.subcity}, ${listing.city}`;
 
   return (

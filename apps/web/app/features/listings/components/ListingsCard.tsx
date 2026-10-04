@@ -6,6 +6,7 @@ import { Badge, type BadgeProps } from "@/components/ui/Badge";
 import { ButtonLink } from "@/components/ui/Button";
 import { HeartIcon, MapPinIcon } from "@/components/ui/Icon";
 import { useLanguage, useTranslations } from "@/il8n/LanguageProvider";
+import { ApiError } from "@/lib/api";
 import { cn, formatETB, formatRelativeTime, listingHref } from "@/lib/utils";
 import { useSaved } from "../saved";
 import type { Listing } from "../types";
@@ -27,17 +28,23 @@ function PromotionBadge({ listing }: { listing: Listing }) {
 
 function SaveButton({ listing, className }: { listing: Listing; className?: string }) {
   const t = useTranslations();
-  const { saved, toggle } = useSaved(String(listing.id));
+  const { saved, toggle } = useSaved(String(listing.id), listing.isSaved);
 
   return (
     <button
       type="button"
       aria-pressed={saved}
       aria-label={`${saved ? t("common.saved") : t("common.save")}: ${listing.title}`}
-      onClick={(e) => {
+      onClick={async (e) => {
         e.preventDefault();
         e.stopPropagation();
-        toggle();
+        try {
+          await toggle();
+        } catch (error) {
+          if (error instanceof ApiError && error.status === 401) {
+            window.location.assign("/sign-in?mode=login");
+          }
+        }
       }}
       className={cn(
         "tap-target flex items-center justify-center rounded-full bg-white/90 text-ink shadow-elevation-1 backdrop-blur transition-colors hover:text-danger",

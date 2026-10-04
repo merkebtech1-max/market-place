@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useSyncExternalStore } from "react";
+import { saveListing, unsaveListing } from "./api";
 
 export const SAVED_STORAGE_KEY = "merkeb.saved";
 
@@ -40,23 +41,44 @@ function read(): string[] {
   return cachedIds;
 }
 
-function toggle(id: string) {
-  const ids = read();
-  const next = ids.includes(id) ? ids.filter((x) => x !== id) : [id, ...ids];
+function write(ids: string[]) {
+  cachedIds = ids;
+  cachedRaw = JSON.stringify(ids);
   try {
-    window.localStorage.setItem(SAVED_STORAGE_KEY, JSON.stringify(next));
+    window.localStorage.setItem(SAVED_STORAGE_KEY, cachedRaw);
   } catch {
-    return;
+    // The API remains the source of truth when storage is unavailable.
   }
   emit();
+}
+
+export function replaceSavedIds(ids: string[]) {
+  write(ids);
+}
+
+async function toggle(id: string) {
+  const ids = read();
+  const wasSaved = ids.includes(id);
+  const next = wasSaved ? ids.filter((x) => x !== id) : [id, ...ids];
+  write(next);
+  try {
+    if (wasSaved) await unsaveListing(id);
+    else await saveListing(id);
+  } catch (error) {
+    write(ids);
+    throw error;
+  }
 }
 
 export function useSavedIds(): string[] {
   return useSyncExternalStore(subscribe, read, () => EMPTY);
 }
 
-export function useSaved(id: string) {
+export function useSaved(id: string, initialSaved = false) {
   const ids = useSavedIds();
+  useEffect(() => {
+    if (initialSaved && !read().includes(id)) write([id, ...read()]);
+  }, [id, initialSaved]);
   const toggleSaved = useCallback(() => toggle(id), [id]);
   return { saved: ids.includes(id), toggle: toggleSaved };
 }

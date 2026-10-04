@@ -4,7 +4,6 @@ import { Container } from "@/components/layout/Container";
 import { AccountMenuContent } from "@/components/layout/AccountMenu";
 import { SavedListings } from "@/features/listings/components/SavedListings";
 import { T } from "@/il8n/T";
-import { listings } from "@/lib/mock-data";
 
 /** Mobile bottom-nav "Account" destination — same content as the header dropdown, plus saved items. */
 export default function AccountPage() {
@@ -17,7 +16,7 @@ export default function AccountPage() {
         <h2 id="account-saved" className="mb-3 text-base font-semibold text-ink">
           <T k="placeholder.savedTitle" />
         </h2>
-        <SavedListings listings={listings} />
+        <SavedListings />
       </section>
     </Container>
   );

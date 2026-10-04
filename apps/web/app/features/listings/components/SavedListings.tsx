@@ -1,19 +1,33 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { ButtonLink } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { HeartIcon } from "@/components/ui/Icon";
 import { T } from "@/il8n/T";
 import type { Listing } from "../types";
-import { useSavedIds } from "../saved";
+import { getSavedListings } from "../api";
+import { replaceSavedIds } from "../saved";
 import { ListingCard } from "./ListingsCard";
 
 /** Shows the listings the user hearted, newest-saved first. */
-export function SavedListings({ listings }: { listings: Listing[] }) {
-  const ids = useSavedIds();
-  const saved = ids
-    .map((id) => listings.find((l) => String(l.id) === id))
-    .filter((l): l is Listing => Boolean(l));
+export function SavedListings() {
+  const [saved, setSaved] = useState<Listing[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getSavedListings()
+      .then((listings) => {
+        setSaved(listings);
+        replaceSavedIds(listings.map((listing) => listing.id));
+      })
+      .catch(() => setSaved([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return <div className="h-40 animate-pulse rounded-card bg-ink/5" />;
+  }
 
   if (saved.length === 0) {
     return (

@@ -5,9 +5,9 @@ import { FilterSidebar } from "@/features/search/components/FilterSidebar";
 import { FilterSheet } from "@/features/search/components/FilterSheet";
 import { SortSelect } from "@/features/search/components/SortSelect";
 import { SearchResults } from "@/features/search/components/SearchResults";
-import { applyFilters, parseFilters } from "@/features/search/utils";
+import { parseFilters } from "@/features/search/utils";
+import { getListings } from "@/features/listings/api";
 import { T } from "@/il8n/T";
-import { listings } from "@/lib/mock-data";
 
 export const metadata: Metadata = { title: "Search — Merkeb Market" };
 
@@ -27,7 +27,10 @@ function ToolbarFallback() {
 export default async function SearchPage({ searchParams }: SearchPageProps) {
   const params = await searchParams;
   const filters = parseFilters(params);
-  const results = applyFilters(listings, filters);
+  const { listings: results, meta } = await getListings(filters).catch(() => ({
+    listings: [],
+    meta: { page: 1, limit: 50, total: 0, totalPages: 0 },
+  }));
 
   return (
     <Container className="py-4 sm:py-6">
@@ -40,7 +43,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
           )}
         </h1>
         <p className="text-sm text-ink-muted">
-          {results.length} <T k="common.results" />
+          {meta.total} <T k="common.results" />
         </p>
       </div>
 
