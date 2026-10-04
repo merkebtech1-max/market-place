@@ -19,7 +19,7 @@ export function HomeBrowseFilters({
   defaultSubcity,
 }: {
   listings: Listing[];
-  defaultCity: string;
+  defaultCity: keyof typeof subcitiesByCity;
   defaultSubcity: string;
 }) {
   const t = useTranslations();

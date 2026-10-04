@@ -1,6 +1,6 @@
 import { ButtonLink } from "@/components/ui/Button";
 import { HeroCarousel, type HeroSlide } from "@/components/marketing/HeroCarousel";
-import { LogInIcon, UserPlusIcon } from "@/components/ui/Icon";
+import { ChevronRightIcon, LogInIcon, UserPlusIcon } from "@/components/ui/Icon";
 import { T } from "@/il8n/T";
 
 const heroSlides: HeroSlide[] = [
@@ -37,9 +37,18 @@ export default function SplashPage() {
       <HeroCarousel slides={heroSlides} className="h-full w-full sm:rounded-card">
         <div className="flex flex-wrap items-center justify-center gap-4">
           <ButtonLink
-            href="/sign-in?mode=login"
+            href="/home"
             size="lg"
             className="h-12 px-6 text-sm sm:h-14 sm:px-8 sm:text-base"
+          >
+            <T k="home.getStarted" />
+            <ChevronRightIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+          </ButtonLink>
+          <ButtonLink
+            href="/sign-in?mode=login"
+            variant="outline"
+            size="lg"
+            className="h-12 border-white/70 bg-white/10 px-6 text-sm text-white backdrop-blur-sm hover:bg-white/20 sm:h-14 sm:px-8 sm:text-base"
           >
             <LogInIcon className="h-4 w-4 sm:h-5 sm:w-5" />
             <T k="home.login" />
