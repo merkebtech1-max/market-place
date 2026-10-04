@@ -1,10 +1,14 @@
 import { IsIn, IsNotEmpty, IsString, MaxLength } from 'class-validator';
 
-/** Moderator-chosen disposition of a report. */
+const REPORT_ACTIONS = ['REMOVE_LISTING', 'SUSPEND_USER', 'DELETE_USER', 'REMOVE_MESSAGE', 'DISMISS'] as const;
+
+export type ReportAction = (typeof REPORT_ACTIONS)[number];
+
+/** Moderator-chosen action on a pending report. */
 export class ResolveReportDto {
   @IsString()
-  @IsIn(['RESOLVED', 'DISMISSED'], { message: 'status must be RESOLVED or DISMISSED' })
-  status: 'RESOLVED' | 'DISMISSED';
+  @IsIn(REPORT_ACTIONS, { message: 'action must be REMOVE_LISTING, SUSPEND_USER, DELETE_USER, REMOVE_MESSAGE, or DISMISS' })
+  action: ReportAction;
 
   @IsString()
   @IsNotEmpty({ message: 'resolution is required' })

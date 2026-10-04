@@ -5,7 +5,7 @@ describe('AdminReportsService', () => {
   let service: AdminReportsService;
 
   const prismaMock = {
-    report: { findMany: vi.fn() },
+    report: { findMany: vi.fn(), groupBy: vi.fn() },
     listing: { findMany: vi.fn() },
     user: { findMany: vi.fn() },
     message: { findMany: vi.fn() },
@@ -13,6 +13,7 @@ describe('AdminReportsService', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    prismaMock.report.groupBy.mockResolvedValue([]);
     service = new AdminReportsService(prismaMock as any);
   });
 
