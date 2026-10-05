@@ -5,6 +5,8 @@ import { AdminReportsService } from './services/admin-reports.service.js';
 import { ResolveReportService } from './services/resolve-report.service.js';
 import { AdminUsersService } from './services/admin-users.service.js';
 import { AdminListingsService } from './services/admin-listings.service.js';
+import { AdminOverviewService } from './services/admin-overview.service.js';
+import { AdminAuditLogsService } from './services/admin-audit-logs.service.js';
 import { RemoveListingService } from './services/remove-listing.service.js';
 import { RestoreListingService } from './services/restore-listing.service.js';
 import { SuspendUserService } from './services/suspend-user.service.js';
@@ -16,6 +18,6 @@ import { ModeratorGuard } from './moderator.guard.js';
 @Module({
   imports: [AuthModule],
   controllers: [AdminController],
-  providers: [AdminReportsService, AdminUsersService, AdminListingsService, ResolveReportService, SuspendUserService, UnsuspendUserService, DeleteUserService, RestoreUserService, RemoveListingService, RestoreListingService, ModeratorGuard],
+  providers: [AdminReportsService, AdminUsersService, AdminListingsService, AdminOverviewService, AdminAuditLogsService, ResolveReportService, SuspendUserService, UnsuspendUserService, DeleteUserService, RestoreUserService, RemoveListingService, RestoreListingService, ModeratorGuard],
 })
 export class AdminModule {}

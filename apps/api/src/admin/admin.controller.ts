@@ -3,11 +3,14 @@ import { AuthGuard } from '@nestjs/passport';
 import { ListReportsDto } from './dto/list-reports.dto.js';
 import { ListUsersDto } from './dto/list-users.dto.js';
 import { ListListingsDto } from './dto/list-listings.dto.js';
+import { ListAuditLogsDto } from './dto/list-audit-logs.dto.js';
 import { AdminReportsService, type AdminReportView, type AdminReportDetail } from './services/admin-reports.service.js';
 import { AdminUsersService, type AdminUserDetail, type AdminUserSummary, type AdminUsersPage } from './services/admin-users.service.js';
 import { SuspendUserService, type SuspendUserResult } from './services/suspend-user.service.js';
 import { UnsuspendUserService, type UnsuspendUserResult } from './services/unsuspend-user.service.js';
 import { AdminListingsService, type AdminListingDetail, type AdminListingSummary, type AdminListingsPage } from './services/admin-listings.service.js';
+import { AdminOverviewService, type AdminOverview } from './services/admin-overview.service.js';
+import { AdminAuditLogsService, type AuditLogEntry, type AdminAuditLogsPage } from './services/admin-audit-logs.service.js';
 import { RemoveListingService, type RemoveListingResult } from './services/remove-listing.service.js';
 import { RestoreListingService, type RestoreListingResult } from './services/restore-listing.service.js';
 import { DeleteUserService, type DeleteUserResult } from './services/delete-user.service.js';
@@ -27,6 +30,8 @@ export class AdminController {
     private readonly resolveReportService: ResolveReportService,
     private readonly adminUsersService: AdminUsersService,
     private readonly adminListingsService: AdminListingsService,
+    private readonly adminOverviewService: AdminOverviewService,
+    private readonly adminAuditLogsService: AdminAuditLogsService,
     private readonly removeListingService: RemoveListingService,
     private readonly restoreListingService: RestoreListingService,
     private readonly suspendUserService: SuspendUserService,
@@ -34,6 +39,26 @@ export class AdminController {
     private readonly deleteUserService: DeleteUserService,
     private readonly restoreUserService: RestoreUserService,
   ) {}
+
+  @Get('overview')
+  @UseGuards(AuthGuard('jwt'), ModeratorGuard)
+  async getOverview(): Promise<{ success: true; data: AdminOverview }> {
+    this.logger.log('[REQUEST] GET /admin/overview');
+    const data = await this.adminOverviewService.getOverview();
+    this.logger.log(`[RESPONSE] GET /admin/overview - users=${data.users.total}, listings=${data.listings.total}`);
+    return { success: true, data };
+  }
+
+  @Get('audit-logs')
+  @UseGuards(AuthGuard('jwt'), ModeratorGuard)
+  async listAuditLogs(
+    @Query() query: ListAuditLogsDto,
+  ): Promise<{ success: true; data: AuditLogEntry[]; pagination: AdminAuditLogsPage['pagination'] }> {
+    this.logger.log(`[REQUEST] GET /admin/audit-logs - action=${query.action ?? 'any'}, page=${query.page}, limit=${query.limit}`);
+    const { data, pagination } = await this.adminAuditLogsService.listAuditLogs(query);
+    this.logger.log(`[RESPONSE] GET /admin/audit-logs - count=${data.length}, total=${pagination.total}`);
+    return { success: true, data, pagination };
+  }
 
   @Get('listings')
   @UseGuards(AuthGuard('jwt'), ModeratorGuard)
