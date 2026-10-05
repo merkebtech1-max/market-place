@@ -2,14 +2,9 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { ListingCondition, ListingStatus, ReportStatus, ReportTargetType, UserStatus } from '../../generated/prisma/enums.js';
 import { ListReportsDto } from '../dto/list-reports.dto.js';
+import { buildReportSummaryMap, emptyReportSummary, type ReportSummary } from './report-summary.js';
 
-/** Historical per-target report counts, always with all four fields. */
-export interface ReportSummary {
-  total: number;
-  pending: number;
-  resolved: number;
-  dismissed: number;
-}
+export type { ReportSummary };
 
 type ListingTargetRow = {
   id: string; title: string; status: ListingStatus; priceCents: number; condition: ListingCondition; createdAt: Date;
@@ -261,7 +256,7 @@ export class AdminReportsService {
       where: { listingId: { in: listingIds } },
       _count: { _all: true },
     });
-    return buildSummaryMap(groups, (group) => group.listingId);
+    return buildReportSummaryMap(groups, (group) => group.listingId);
   }
 
   /** Historical report counts grouped by targeted user, across ALL statuses. */
@@ -272,7 +267,7 @@ export class AdminReportsService {
       where: { targetType: ReportTargetType.USER, targetId: { in: userIds } },
       _count: { _all: true },
     });
-    return buildSummaryMap(groups, (group) => group.targetId);
+    return buildReportSummaryMap(groups, (group) => group.targetId);
   }
 
   /** Full moderation detail for a single report. Read-only. */
@@ -524,31 +519,4 @@ export class AdminReportsService {
       }
     }
   }
-}
-
-function emptyReportSummary(): ReportSummary {
-  return { total: 0, pending: 0, resolved: 0, dismissed: 0 };
-}
-
-/** Collapse grouped (id, status, count) rows into per-id ReportSummary maps. */
-function buildSummaryMap<Group extends { status: ReportStatus; _count: { _all: number } }>(
-  groups: Group[],
-  getId: (group: Group) => string | null,
-): Map<string, ReportSummary> {
-  const summariesById = new Map<string, ReportSummary>();
-
-  for (const group of groups) {
-    const id = getId(group);
-    if (!id) continue;
-
-    const summary = summariesById.get(id) ?? emptyReportSummary();
-    const count = group._count._all;
-    summary.total += count;
-    if (group.status === ReportStatus.PENDING) summary.pending += count;
-    else if (group.status === ReportStatus.RESOLVED) summary.resolved += count;
-    else if (group.status === ReportStatus.DISMISSED) summary.dismissed += count;
-    summariesById.set(id, summary);
-  }
-
-  return summariesById;
 }

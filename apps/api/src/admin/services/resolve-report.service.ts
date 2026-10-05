@@ -1,8 +1,9 @@
 import { BadRequestException, ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { Prisma } from '../../generated/prisma/client.js';
-import { ListingStatus, ReportStatus, ReportTargetType, UserRole, UserStatus } from '../../generated/prisma/enums.js';
+import { ReportStatus, ReportTargetType, UserRole, UserStatus } from '../../generated/prisma/enums.js';
 import { ResolveReportDto, type ReportAction } from '../dto/resolve-report.dto.js';
+import { RemoveListingService } from './remove-listing.service.js';
 
 /** View of a handled report, including the action taken. */
 export interface ResolveReportResponse {
@@ -35,7 +36,10 @@ type ReportRow = { id: string; status: ReportStatus; createdAt: Date; targetType
 export class ResolveReportService {
   private readonly logger = new Logger(ResolveReportService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly removeListingService: RemoveListingService,
+  ) {}
 
   async resolveReport(moderatorId: string, reportId: string, dto: ResolveReportDto): Promise<ResolveReportResponse> {
     this.logger.log(`[START] Handling report: report=${reportId}, moderator=${moderatorId}, action=${dto.action}`);
@@ -75,7 +79,7 @@ export class ResolveReportService {
 
       switch (dto.action) {
         case 'REMOVE_LISTING':
-          await this.removeListing(tx, moderatorId, report);
+          await this.removeListingService.removeListingInTransaction(tx, moderatorId, report.targetId, report.id);
           break;
         case 'SUSPEND_USER':
           await this.suspendUser(tx, moderatorId, report);
@@ -121,25 +125,6 @@ export class ResolveReportService {
     this.logger.log(`[SUCCESS] Report ${reportId} -> ${dto.action} (${result.status}) by ${moderatorId}`);
 
     return result;
-  }
-
-  private async removeListing(tx: Prisma.TransactionClient, moderatorId: string, report: ReportRow) {
-    const listing = await tx.listing.findUnique({
-      where: { id: report.targetId },
-      select: { id: true, status: true },
-    });
-    if (!listing) throw new NotFoundException('Target listing not found.');
-    if (listing.status === ListingStatus.REMOVED) throw new ConflictException('Listing is already removed.');
-
-    await tx.listing.update({ where: { id: listing.id }, data: { status: ListingStatus.REMOVED } });
-    await tx.auditLog.create({
-      data: {
-        actorId: moderatorId,
-        action: 'LISTING_REMOVED',
-        target: listing.id,
-        diff: { reportId: report.id, from: listing.status, to: ListingStatus.REMOVED },
-      },
-    });
   }
 
   private async suspendUser(tx: Prisma.TransactionClient, moderatorId: string, report: ReportRow) {

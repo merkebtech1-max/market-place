@@ -1,5 +1,6 @@
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { ResolveReportService } from './resolve-report.service.js';
+import { RemoveListingService } from './remove-listing.service.js';
 import { ReportStatus } from '../../generated/prisma/enums.js';
 
 describe('ResolveReportService', () => {
@@ -7,7 +8,7 @@ describe('ResolveReportService', () => {
 
   const txMock = {
     report: { findUnique: vi.fn(), updateMany: vi.fn() },
-    listing: { findUnique: vi.fn(), update: vi.fn() },
+    listing: { findUnique: vi.fn(), updateMany: vi.fn() },
     user: { findUnique: vi.fn(), update: vi.fn() },
     message: { findUnique: vi.fn(), delete: vi.fn() },
     auditLog: { create: vi.fn() },
@@ -20,7 +21,7 @@ describe('ResolveReportService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     prismaMock.$transaction.mockImplementation(async (callback: (tx: any) => Promise<unknown>) => callback(txMock));
-    service = new ResolveReportService(prismaMock as any);
+    service = new ResolveReportService(prismaMock as any, new RemoveListingService(prismaMock as any));
   });
 
   const baseReport = {
@@ -53,7 +54,7 @@ describe('ResolveReportService', () => {
     await expect(
       service.resolveReport('mod-1', 'report-1', { action: 'REMOVE_LISTING', resolution: 'bad' }),
     ).rejects.toThrow(BadRequestException);
-    expect(txMock.listing.update).not.toHaveBeenCalled();
+    expect(txMock.listing.updateMany).not.toHaveBeenCalled();
     expect(txMock.auditLog.create).not.toHaveBeenCalled();
   });
 
@@ -76,11 +77,15 @@ describe('ResolveReportService', () => {
   it('REMOVE_LISTING removes the listing, audits, and resolves', async () => {
     mockReport();
     txMock.listing.findUnique.mockResolvedValue({ id: 'listing-1', status: 'ACTIVE' });
+    txMock.listing.updateMany.mockResolvedValue({ count: 1 });
     txMock.report.updateMany.mockResolvedValue({ count: 1 });
 
     const result = await service.resolveReport('mod-1', 'report-1', { action: 'REMOVE_LISTING', resolution: 'Policy violation.' });
 
-    expect(txMock.listing.update).toHaveBeenCalledWith({ where: { id: 'listing-1' }, data: { status: 'REMOVED' } });
+    expect(txMock.listing.updateMany).toHaveBeenCalledWith({
+      where: { id: 'listing-1', status: { in: ['DRAFT', 'PENDING_REVIEW', 'ACTIVE', 'RESERVED', 'EXPIRED'] } },
+      data: { status: 'REMOVED' },
+    });
     expect(txMock.auditLog.create).toHaveBeenCalledWith({
       data: expect.objectContaining({ action: 'LISTING_REMOVED', target: 'listing-1' }),
     });
@@ -94,7 +99,7 @@ describe('ResolveReportService', () => {
     await expect(
       service.resolveReport('mod-1', 'report-1', { action: 'REMOVE_LISTING', resolution: 'x' }),
     ).rejects.toThrow(ConflictException);
-    expect(txMock.listing.update).not.toHaveBeenCalled();
+    expect(txMock.listing.updateMany).not.toHaveBeenCalled();
   });
 
   it('SUSPEND_USER suspends the user, audits, and resolves', async () => {
@@ -168,6 +173,7 @@ describe('ResolveReportService', () => {
   it('claims the report (PENDING → REVIEWING) before acting, then resolves REVIEWING → final', async () => {
     mockReport();
     txMock.listing.findUnique.mockResolvedValue({ id: 'listing-1', status: 'ACTIVE' });
+    txMock.listing.updateMany.mockResolvedValue({ count: 1 });
     txMock.report.updateMany.mockResolvedValue({ count: 1 });
 
     await service.resolveReport('mod-1', 'report-1', { action: 'REMOVE_LISTING', resolution: 'x' });
@@ -200,7 +206,7 @@ describe('ResolveReportService', () => {
     // ...but no moderation, no audit, and no final RESOLVED update —
     // in production the thrown error rolls the tx back, returning the
     // report to PENDING.
-    expect(txMock.listing.update).not.toHaveBeenCalled();
+    expect(txMock.listing.updateMany).not.toHaveBeenCalled();
     expect(txMock.auditLog.create).not.toHaveBeenCalled();
     expect(
       txMock.report.updateMany.mock.calls.some(
@@ -212,7 +218,8 @@ describe('ResolveReportService', () => {
   it('returns ConflictException when the conditional update loses a race', async () => {
     mockReport();
     txMock.listing.findUnique.mockResolvedValue({ id: 'listing-1', status: 'ACTIVE' });
-    txMock.report.updateMany.mockResolvedValue({ count: 0 });
+    txMock.listing.updateMany.mockResolvedValue({ count: 0 });
+    txMock.report.updateMany.mockResolvedValue({ count: 1 });
 
     await expect(
       service.resolveReport('mod-1', 'report-1', { action: 'REMOVE_LISTING', resolution: 'x' }),
