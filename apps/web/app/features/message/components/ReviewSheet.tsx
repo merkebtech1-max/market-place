@@ -17,17 +17,26 @@ export function ReviewSheet({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   peerName: string;
-  onSubmit: (review: { stars: number; comment: string }) => void;
+  onSubmit: (review: { stars: number; comment: string }) => void | Promise<void>;
 }) {
   const { t } = useLanguage();
   const [stars, setStars] = useState(0);
   const [comment, setComment] = useState("");
-  const [error, setError] = useState(false);
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  const submit = () => {
-    if (!stars) return setError(true);
-    onSubmit({ stars, comment });
-    onOpenChange(false);
+  const submit = async () => {
+    if (!stars) return setError(t("review.errStars"));
+    setSubmitting(true);
+    setError("");
+    try {
+      await onSubmit({ stars, comment });
+      onOpenChange(false);
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : t("review.submitError"));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -42,7 +51,7 @@ export function ReviewSheet({
           <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
             {t("review.later")}
           </Button>
-          <Button onClick={submit} className="flex-1">
+          <Button onClick={submit} className="flex-1" loading={submitting}>
             {t("review.submit")}
           </Button>
         </>
@@ -59,7 +68,7 @@ export function ReviewSheet({
               aria-label={t("review.starLabel", { count: n })}
               onClick={() => {
                 setStars(n);
-                setError(false);
+                setError("");
               }}
               className="tap-target flex items-center justify-center"
             >
@@ -69,7 +78,7 @@ export function ReviewSheet({
         </div>
         {error && (
           <p role="alert" className="text-center text-xs font-medium text-danger">
-            {t("review.errStars")}
+            {error}
           </p>
         )}
         <label className="block text-sm font-medium text-ink">

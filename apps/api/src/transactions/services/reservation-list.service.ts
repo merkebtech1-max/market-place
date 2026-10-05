@@ -28,6 +28,7 @@ export interface ReservationCard {
   expiresAt: Date;
   createdAt: Date;
   listing: ReservationListingCard;
+  hasRated: boolean;
 }
 
 const RESERVATION_CARD_SELECT = {
@@ -81,7 +82,14 @@ export class ReservationListService {
 
     // Business ordering: active (RESERVED) first, then newest first.
     // Explicit sort rather than relying on DB enum ordering.
-    const cards = reservations.map((row) => this.toCard(row));
+    const ratedListings = reservations.length
+      ? await this.prisma.rating.findMany({
+          where: { raterId: buyerId, listingId: { in: reservations.map((row) => row.listing.id) } },
+          select: { listingId: true },
+        })
+      : [];
+    const ratedListingIds = new Set(ratedListings.map((rating) => rating.listingId));
+    const cards = reservations.map((row) => this.toCard(row, ratedListingIds.has(row.listing.id)));
     return cards.sort((a, b) => {
       if (a.status === ReservationStatus.RESERVED && b.status !== ReservationStatus.RESERVED) return -1;
       if (a.status !== ReservationStatus.RESERVED && b.status === ReservationStatus.RESERVED) return 1;
@@ -89,12 +97,13 @@ export class ReservationListService {
     });
   }
 
-  private toCard(row: ReservationRow): ReservationCard {
+  private toCard(row: ReservationRow, hasRated: boolean): ReservationCard {
     return {
       id: row.id,
       status: row.status,
       expiresAt: row.expiresAt,
       createdAt: row.createdAt,
+      hasRated,
       listing: {
         id: row.listing.id,
         title: row.listing.title,

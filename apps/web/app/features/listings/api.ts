@@ -18,7 +18,13 @@ type ApiCategory = {
   children?: ApiCategory[];
 };
 
-type ApiLocation = { id: string; nameEn: string; nameAm: string };
+type ApiLocation = {
+  id: string;
+  nameEn: string;
+  nameAm: string;
+  type?: string;
+  children?: ApiLocation[];
+};
 
 type ApiSeller = {
   id: string;
@@ -190,4 +196,54 @@ export async function getCategories(): Promise<Category[]> {
     imageUrl: categoryVisuals[category.slug]?.imageUrl ?? "/image/logo.jpg",
     listingCount: 0,
   }));
+}
+
+export async function getLocationTree() {
+  const result = await apiRequest<{ success: true; locations: ApiLocation[] }>("/locations", {
+    cache: "no-store",
+  });
+  return result.locations;
+}
+
+type CreateListingInput = {
+  title: string;
+  description: string;
+  condition: string;
+  priceCents: number;
+  isNegotiable: boolean;
+  attributes: Record<string, unknown>;
+  categoryId: string;
+  cityId: string;
+  subcityId?: string;
+  landmark?: string;
+};
+
+export async function createListingDraft(input: CreateListingInput) {
+  return authenticatedApiRequest<{ success: true; listingId: string; status: string }>("/listings", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+}
+
+export async function updateListingDraft(id: string, input: CreateListingInput) {
+  return authenticatedApiRequest(`/listings/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+}
+
+export async function uploadListingImage(id: string, file: File) {
+  const body = new FormData();
+  body.append("file", file);
+  return authenticatedApiRequest(`/listings/${id}/images`, { method: "POST", body });
+}
+
+export async function publishListing(id: string) {
+  return authenticatedApiRequest(`/listings/${id}/publish`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({}),
+  });
 }

@@ -1,70 +1,88 @@
-import { getListingById } from "@/lib/mock-data";
-import type { Conversation } from "./types";
+import { authenticatedApiRequest, getAuthSession } from "@/lib/auth";
+import type { ChatMessage, Conversation } from "./types";
 
-const ago = (minutes: number) => new Date(Date.now() - minutes * 60_000).toISOString();
+type ApiMessage = {
+  id: string;
+  senderId: string;
+  body: string;
+  type: "TEXT" | "SYSTEM";
+  createdAt: string;
+};
 
-/** Mock backend seam — swap for the `/messages` API (Socket.IO + polling fallback) later. */
-function seed(): Conversation[] {
-  return [
-    {
-      id: "c1",
-      peerName: "Abebe Kebede",
-      listingTitle: "Samsung Galaxy A54 – 128GB",
-      listingPriceCents: 4_500_000,
-      unread: 2,
-      role: "selling",
-      messages: [
-        { id: "m1", mine: false, kind: "text", body: "ሰላም! ስልኩ አሁንም አለ?", sentAt: ago(50) },
-        { id: "m2", mine: true, kind: "text", body: "አዎ አለ። ማየት ይፈልጋሉ?", sentAt: ago(45) },
-        { id: "m3", mine: false, kind: "offer", offerCents: 4_000_000, offerStatus: "pending", sentAt: ago(30) },
-      ],
-    },
-    {
-      id: "c2",
-      peerName: "Hana Tesfaye",
-      listingTitle: "Mountain bicycle",
-      listingPriceCents: 550_000,
-      unread: 0,
-      role: "buying",
-      messages: [
-        { id: "m1", mine: true, kind: "text", body: "Is it still available?", sentAt: ago(1500) },
-        { id: "m2", mine: false, kind: "text", body: "Yes, come see it in Bole.", sentAt: ago(1400) },
-        { id: "m3", mine: true, kind: "offer", offerCents: 450_000, offerStatus: "declined", sentAt: ago(1300) },
-      ],
-    },
-    {
-      id: "c3",
-      peerName: "Dawit Alemu",
-      listingTitle: "Wooden dining table",
-      listingPriceCents: 1_200_000,
-      unread: 0,
-      role: "buying",
-      messages: [
-        { id: "m1", mine: true, kind: "offer", offerCents: 900_000, offerStatus: "countered", sentAt: ago(300) },
-        { id: "m2", mine: false, kind: "offer", offerCents: 1_050_000, offerStatus: "pending", previousCents: 900_000, sentAt: ago(200) },
-      ],
-    },
-  ];
+type ApiThread = {
+  id: string;
+  role: "buying" | "selling";
+  listing: { id: string; title: string; priceCents: number };
+  counterparty: { id: string; displayName: string; avatarKey: string | null };
+  lastMessage: ApiMessage | null;
+};
+
+function toMessage(message: ApiMessage, userId: string): ChatMessage {
+  return {
+    id: message.id,
+    mine: message.senderId === userId,
+    kind: message.type === "SYSTEM" ? "system" : "text",
+    body: message.body,
+    sentAt: message.createdAt,
+  };
+}
+
+function toConversation(thread: ApiThread, messages: ChatMessage[]): Conversation {
+  return {
+    id: thread.id,
+    listingId: thread.listing.id,
+    peerName: thread.counterparty.displayName,
+    listingTitle: thread.listing.title,
+    listingPriceCents: thread.listing.priceCents,
+    unread: 0,
+    role: thread.role,
+    messages,
+  };
+}
+
+async function loadThreads() {
+  const response = await authenticatedApiRequest<{ success: true; threads: ApiThread[] }>(
+    "/threads/my",
+    { cache: "no-store" }
+  );
+  return response.threads;
 }
 
 export async function getConversations() {
-  return seed();
+  const userId = getAuthSession()?.userId ?? "";
+  return (await loadThreads()).map((thread) =>
+    toConversation(thread, thread.lastMessage ? [toMessage(thread.lastMessage, userId)] : [])
+  );
 }
 
 export async function getConversation(id: string) {
-  // `l-<listingId>` opens (or starts) the buyer's conversation about that listing.
+  let threadId = id;
   if (id.startsWith("l-")) {
-    const listing = getListingById(id.slice(2));
-    if (!listing) return null;
-    return {
-      id,
-      peerName: listing.seller.displayName,
-      listingTitle: listing.title,
-      listingPriceCents: listing.priceCents,
-      unread: 0,
-      role: "buying",
-      messages: [],
-    } satisfies Conversation;
+    const created = await authenticatedApiRequest<{
+      success: true;
+      thread: { id: string };
+    }>("/threads", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ listingId: id.slice(2) }),
+    });
+    threadId = created.thread.id;
   }
-  return seed().find((c) => c.id === id) ?? null;
+
+  const thread = (await loadThreads()).find((item) => item.id === threadId);
+  if (!thread) return null;
+
+  const response = await authenticatedApiRequest<{
+    success: true;
+    data: { messages: ApiMessage[] };
+  }>(`/threads/${threadId}/messages?limit=50`, { cache: "no-store" });
+  const userId = getAuthSession()?.userId ?? "";
+  const messages = response.data.messages.slice().reverse().map((message) => toMessage(message, userId));
+  return toConversation(thread, messages);
 }
+
+export function apiMessageToChat(message: ApiMessage): ChatMessage {
+  return toMessage(message, getAuthSession()?.userId ?? "");
+}
+
+export type { ApiMessage };

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -10,10 +10,14 @@ import { Button, ButtonLink } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { PackageIcon } from "@/components/ui/Icon";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { useSession } from "@/features/auth/session";
 import { useLanguage } from "@/il8n/LanguageProvider";
+import {
+  getIsAuthenticated,
+  getServerIsAuthenticated,
+  subscribeAuthSession,
+} from "@/lib/auth";
 import { cn, formatETB, listingHref } from "@/lib/utils";
-import { markListingSold, publishDraft } from "../actions";
+import { deleteMyListing, publishDraft } from "../actions";
 import { getMyListings } from "../queries";
 import { SELLER_TABS, type SellerCounts, type SellerListing, type SellerTab } from "../types";
 
@@ -26,7 +30,11 @@ const STATUS_BADGE = {
 
 export function SellerListings() {
   const { t, locale } = useLanguage();
-  const { isAuthenticated } = useSession();
+  const isAuthenticated = useSyncExternalStore(
+    subscribeAuthSession,
+    getIsAuthenticated,
+    getServerIsAuthenticated
+  );
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -35,6 +43,7 @@ export function SellerListings() {
 
   const [data, setData] = useState<{ items: SellerListing[]; counts: SellerCounts } | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const load = useCallback(() => getMyListings(tab).then(setData), [tab]);
 
@@ -48,16 +57,22 @@ export function SellerListings() {
     router.replace(k === "all" ? pathname : `${pathname}?status=${k}`, { scroll: false });
   };
 
-  const markSold = async (l: SellerListing) => {
-    await markListingSold(l.id);
-    setNotice(t("dashboard.soldDone", { title: l.title }));
-    await load();
-  };
-
   const publish = async (l: SellerListing) => {
     await publishDraft(l.id);
     setNotice(t("dashboard.publishedDone", { title: l.title }));
     await load();
+  };
+
+  const removeDraft = async (listing: SellerListing) => {
+    if (!window.confirm(t("dashboard.deleteConfirm", { title: listing.title }))) return;
+    setDeletingId(listing.id);
+    try {
+      await deleteMyListing(listing.id);
+      setNotice(t("dashboard.deletedDone", { title: listing.title }));
+      await load();
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   if (!isAuthenticated) {
@@ -67,7 +82,7 @@ export function SellerListings() {
           icon={<PackageIcon />}
           title={t("dashboard.signInTitle")}
           body={t("dashboard.signInBody")}
-          action={<ButtonLink href="/sign-in?mode=login">{t("header.signIn")}</ButtonLink>}
+          action={<ButtonLink href="/sign-in?mode=login&next=%2Fdashboard%2Flistings">{t("header.signIn")}</ButtonLink>}
         />
       </Container>
     );
@@ -128,7 +143,6 @@ export function SellerListings() {
           {data.items.map((l) => {
             const cover = l.images[0];
             const canEdit = l.status !== "sold";
-            const canSell = l.status === "active" || l.status === "reserved";
             return (
               <li key={l.id} className="flex gap-3 rounded-card border border-border bg-surface p-3">
                 <Link href={listingHref(l.id, l.title)} className="shrink-0">
@@ -162,14 +176,19 @@ export function SellerListings() {
                       </ButtonLink>
                     )}
                     {l.status === "draft" && (
-                      <Button size="sm" onClick={() => publish(l)}>
-                        {t("dashboard.publish")}
-                      </Button>
-                    )}
-                    {canSell && (
-                      <Button size="sm" variant="secondary" onClick={() => markSold(l)}>
-                        {t("dashboard.markSold")}
-                      </Button>
+                      <>
+                        <Button size="sm" onClick={() => publish(l)}>
+                          {t("dashboard.publish")}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={deletingId === l.id}
+                          onClick={() => removeDraft(l)}
+                        >
+                          {t("dashboard.delete")}
+                        </Button>
+                      </>
                     )}
                   </div>
                 </div>

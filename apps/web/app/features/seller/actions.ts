@@ -1,27 +1,31 @@
-import { getMyListing, replaceListing } from "./queries";
+import { authenticatedApiRequest } from "@/lib/auth";
 import { SellerListingError, type ListingEdit } from "./types";
 
-/** Lifecycle transitions a seller may trigger (drafts publish; live listings sell). */
-export async function markListingSold(id: string) {
-  const l = await getMyListing(id);
-  if (!l) throw new SellerListingError("not_found");
-  if (l.status !== "active" && l.status !== "reserved") throw new SellerListingError("bad_transition");
-  replaceListing({ ...l, status: "sold" });
-}
-
 export async function publishDraft(id: string) {
-  const l = await getMyListing(id);
-  if (!l) throw new SellerListingError("not_found");
-  if (l.status !== "draft") throw new SellerListingError("bad_transition");
-  replaceListing({ ...l, status: "active", publishedAt: new Date().toISOString() });
+  await authenticatedApiRequest(`/listings/${id}/publish`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({}),
+  });
 }
 
 export async function updateMyListing(id: string, edit: ListingEdit) {
-  const l = await getMyListing(id);
-  if (!l) throw new SellerListingError("not_found");
-  if (l.status === "sold") throw new SellerListingError("bad_transition");
   if (!edit.title.trim() || !Number.isInteger(edit.priceCents) || edit.priceCents <= 0) {
     throw new SellerListingError("invalid");
   }
-  replaceListing({ ...l, ...edit, title: edit.title.trim(), description: edit.description.trim() });
+  await authenticatedApiRequest(`/listings/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      title: edit.title.trim(),
+      description: edit.description.trim(),
+      priceCents: edit.priceCents,
+      isNegotiable: edit.isNegotiable,
+      attributes: { acceptsSwap: edit.acceptsSwap },
+    }),
+  });
+}
+
+export async function deleteMyListing(id: string) {
+  await authenticatedApiRequest(`/listings/${id}`, { method: "DELETE" });
 }

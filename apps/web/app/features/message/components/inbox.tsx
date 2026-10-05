@@ -24,7 +24,7 @@ export function Inbox() {
   useEffect(() => {
     // "Message seller" from a listing: show the inbox with that chat ready at the top.
     Promise.all([getConversations(), listingId ? getConversation(`l-${listingId}`) : null]).then(
-      ([all, started]) => setItems(started ? [started, ...all] : all)
+      ([all, started]) => setItems(started ? [started, ...all.filter((item) => item.id !== started.id)] : all)
     );
   }, [listingId]);
 

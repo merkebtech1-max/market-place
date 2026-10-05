@@ -19,6 +19,7 @@ export interface ChatMessage {
 
 export interface Conversation {
   id: string;
+  listingId: string;
   peerName: string;
   listingTitle: string;
   listingPriceCents: number;

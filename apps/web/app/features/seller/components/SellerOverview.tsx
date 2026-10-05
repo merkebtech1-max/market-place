@@ -1,19 +1,27 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { Container } from "@/components/layout/Container";
 import { ButtonLink } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { useSession } from "@/features/auth/session";
 import { useLanguage } from "@/il8n/LanguageProvider";
+import {
+  getIsAuthenticated,
+  getServerIsAuthenticated,
+  subscribeAuthSession,
+} from "@/lib/auth";
 import { getMyListings } from "../queries";
 import { SELLER_TABS, type SellerCounts } from "../types";
 
 /** Dashboard home: listing counts per lifecycle state, each linking to its tab. */
 export function SellerOverview() {
   const { t } = useLanguage();
-  const { user, isAuthenticated } = useSession();
+  const isAuthenticated = useSyncExternalStore(
+    subscribeAuthSession,
+    getIsAuthenticated,
+    getServerIsAuthenticated
+  );
   const [counts, setCounts] = useState<SellerCounts | null>(null);
 
   useEffect(() => {
@@ -24,7 +32,7 @@ export function SellerOverview() {
     return (
       <Container className="max-w-md px-3 py-10 text-center">
         <p className="mb-3 text-sm text-ink-muted">{t("dashboard.signInBody")}</p>
-        <ButtonLink href="/sign-in?mode=login">{t("header.signIn")}</ButtonLink>
+        <ButtonLink href="/sign-in?mode=login&next=%2Fdashboard">{t("header.signIn")}</ButtonLink>
       </Container>
     );
   }
@@ -32,7 +40,7 @@ export function SellerOverview() {
   return (
     <Container className="max-w-3xl px-3 py-4 sm:py-8">
       <h1 className="text-xl font-bold text-ink">{t("dashboard.title")}</h1>
-      <p className="mb-4 text-sm text-ink-muted">{t("dashboard.welcome", { name: user?.name ?? "" })}</p>
+      <p className="mb-4 text-sm text-ink-muted">{t("dashboard.welcome", { name: "" })}</p>
       <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {SELLER_TABS.map((k) => (
           <li key={k}>

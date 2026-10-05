@@ -78,6 +78,7 @@ export interface ThreadSummary {
   /** Newest activity: last message time, falling back to thread creation. */
   lastActivityAt: Date;
   unlockedAt: Date | null;
+  role: 'buying' | 'selling';
   // TODO(read-status): unreadCount for the inbox badge lands with readAt work.
 }
 
@@ -135,6 +136,7 @@ export class ThreadListService {
           lastMessage: row.messages[0] ?? null,
           lastActivityAt: row.lastMessageAt ?? row.createdAt,
           unlockedAt: row.unlockedAt,
+          role: isSellerViewing ? 'selling' as const : 'buying' as const,
         };
       });
 

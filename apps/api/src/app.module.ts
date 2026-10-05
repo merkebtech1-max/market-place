@@ -14,6 +14,23 @@ import { LocationsModule } from './locations/locations.module.js';
 import { JobsModule } from './jobs/jobs.module.js';
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true }), PrismaModule, AuthModule, UsersCatalogModule, ListingsModule, MessagingModule, TransactionsModule, ModerationModule, RatingsModule, AdminModule, CategoriesModule, LocationsModule, JobsModule],
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: ['apps/api/.env', '.env'],
+    }),
+    PrismaModule,
+    AuthModule,
+    UsersCatalogModule,
+    ListingsModule,
+    MessagingModule,
+    TransactionsModule,
+    ModerationModule,
+    RatingsModule,
+    AdminModule,
+    CategoriesModule,
+    LocationsModule,
+    JobsModule,
+  ],
 })
 export class AppModule {}

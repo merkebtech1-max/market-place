@@ -30,6 +30,7 @@ export const accountItems: Item[] = [
   { href: "/dashboard/listings", key: "myListings", icon: PackageIcon },
   { href: "/saved", key: "saved", icon: BookmarkIcon },
   { href: "/messages", key: "messages", icon: ChatIcon },
+  { href: "/reservations", key: "reservations", icon: PackageIcon },
 ];
 
 const rowClass =
