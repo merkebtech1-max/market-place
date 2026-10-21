@@ -1,6 +1,5 @@
-import { PlaceholderPage } from "@/components/layout/PlaceholderPage";
-import { T } from "@/il8n/T";
+import { SellerOverview } from "@/features/seller/components/SellerOverview";
 
 export default function DashboardPage() {
-  return <PlaceholderPage title={<T k="placeholder.dashboardTitle" />} />;
+  return <SellerOverview />;
 }

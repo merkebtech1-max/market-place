@@ -1,11 +1,10 @@
-import { PlaceholderPage } from "@/components/layout/PlaceholderPage";
-import { T } from "@/il8n/T";
+import { Suspense } from "react";
+import { Inbox } from "@/features/message/components/inbox";
 
 export default function MessagesPage() {
   return (
-    <PlaceholderPage
-      title={<T k="placeholder.messagesTitle" />}
-      body={<T k="placeholder.messagesBody" />}
-    />
+    <Suspense>
+      <Inbox />
+    </Suspense>
   );
 }
