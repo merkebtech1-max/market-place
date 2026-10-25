@@ -20,6 +20,15 @@ export interface AuthResult {
   tokens: AuthTokens;
 }
 
+export interface CurrentUserProfile {
+  id: string;
+  phone: string;
+  displayName: string;
+  avatarKey: string | null;
+  role: string;
+  status: string;
+}
+
 /** Owns the authentication business flow: verify OTP → user lookup/create → session → tokens */
 @Injectable()
 export class AuthService {
@@ -30,6 +39,22 @@ export class AuthService {
     private readonly otpService: OtpService,
     private readonly jwtTokenService: JwtTokenService,
   ) {}
+
+  async getCurrentUser(userId: string): Promise<CurrentUserProfile> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        phone: true,
+        displayName: true,
+        avatarKey: true,
+        role: true,
+        status: true,
+      },
+    });
+    if (!user) throw new NotFoundException('User not found.');
+    return user;
+  }
 
   /**
    * Logs in an existing user.

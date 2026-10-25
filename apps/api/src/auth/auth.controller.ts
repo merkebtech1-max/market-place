@@ -1,4 +1,4 @@
-import { Body, Controller, Headers, Logger, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Headers, Logger, Post, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service.js';
 import { OtpService } from './otp/otp.service.js';
@@ -19,6 +19,14 @@ export class AuthController {
     private readonly authService: AuthService,
     private readonly otpService: OtpService,
   ) {}
+
+  /** Returns the public account details for the authenticated user. */
+  @Get('me')
+  @UseGuards(AuthGuard('jwt'))
+  async me(@CurrentUser() user: TokenPayload) {
+    const data = await this.authService.getCurrentUser(user.sub);
+    return { success: true, data };
+  }
 
   /** Sends an OTP to the provided phone number */
   @Post('otp/request')
