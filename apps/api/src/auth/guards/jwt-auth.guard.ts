@@ -14,11 +14,24 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     const path = request.url;
 
     if (err || !user) {
-      this.logger.warn(`JWT authentication failed for path=${path} error=${err?.message || info?.message || 'Unknown error'}`);
-      throw err || new UnauthorizedException('Authentication failed');
+      const errorMessage = err?.message || info?.message || 'No authentication token provided';
+      this.logger.warn(`[AUTH] JWT authentication failed for path=${path} - ${errorMessage}`);
+      
+      // Provide user-friendly error message
+      if (errorMessage.includes('No auth token')) {
+        throw new UnauthorizedException('Authentication required. Please provide a valid Bearer token in the Authorization header.');
+      }
+      if (errorMessage.includes('expired')) {
+        throw new UnauthorizedException('Your session has expired. Please log in again.');
+      }
+      if (errorMessage.includes('invalid')) {
+        throw new UnauthorizedException('Invalid authentication token. Please log in again.');
+      }
+      
+      throw err || new UnauthorizedException('Authentication failed. Please log in to access this resource.');
     }
 
-    this.logger.log(`JWT authentication successful for path=${path} userId=${user.sub}`);
+    this.logger.log(`[AUTH] JWT authentication successful for path=${path} userId=${user.sub}`);
     return user;
   }
 }

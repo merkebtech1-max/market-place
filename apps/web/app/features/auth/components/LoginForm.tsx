@@ -14,7 +14,7 @@ import { normalizeEthiopianPhone, PhoneInput } from "./PhoneInput";
 
 type Step = "phone" | "otp" | "register";
 
-export function LoginForm() {
+export function LoginForm({ returnTo = "/dashboard" }: { returnTo?: string }) {
   const t = useTranslations();
   const router = useRouter();
   const [step, setStep] = useState<Step>("phone");
@@ -65,7 +65,7 @@ export function LoginForm() {
     try {
       const response = await loginWithOtp(phone, code);
       saveAuthSession(response);
-      router.push("/dashboard");
+      router.replace(returnTo);
     } catch (loginError) {
       if (loginError instanceof ApiError && loginError.status === 404) {
         setStep("register");
@@ -84,7 +84,7 @@ export function LoginForm() {
     try {
       const response = await registerWithOtp(phone, code, displayName.trim());
       saveAuthSession(response);
-      router.push("/dashboard");
+      router.replace(returnTo);
     } catch (registerError) {
       setError(registerError instanceof Error ? registerError.message : t("auth.genericError"));
     } finally {

@@ -8,7 +8,6 @@ import { Select } from "@/components/ui/Select";
 import { ListingCard } from "@/features/listings/components/ListingsCard";
 import type { Listing, ListingCondition } from "@/features/listings/types";
 import { useTranslations } from "@/il8n/LanguageProvider";
-import { subcitiesByCity } from "@/lib/mock-data";
 
 const CONDITIONS: ListingCondition[] = ["new", "like_new", "good", "fair", "for_parts"];
 
@@ -19,11 +18,14 @@ export function HomeBrowseFilters({
   defaultSubcity,
 }: {
   listings: Listing[];
-  defaultCity: keyof typeof subcitiesByCity;
+  defaultCity: string;
   defaultSubcity: string;
 }) {
   const t = useTranslations();
-  const subcityOptions = subcitiesByCity[defaultCity] ?? [];
+  const subcityOptions = useMemo(
+    () => [...new Set(listings.filter((listing) => listing.city === defaultCity).map((listing) => listing.subcity))],
+    [listings, defaultCity]
+  );
   const [subcity, setSubcity] = useState(defaultSubcity);
   const [condition, setCondition] = useState<ListingCondition | "">("");
 

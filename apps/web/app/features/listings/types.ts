@@ -56,6 +56,7 @@ export interface Listing {
   saveCount: number;
   promotion: PromotionType;
   attributes?: Record<string, string>;
+  isSaved?: boolean;
 }
 
 export interface SearchFilters {

@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
@@ -93,6 +93,15 @@ export class JwtTokenService {
     // Format is sessionId:randomPart, so sessionId is the first part
     // If there's no colon, this is an old-format token without sessionId
     return parts.length >= 2 ? parts[0] : undefined;
+  }
+
+  /** Verifies an access token and returns its payload */
+  async verifyAccessToken(token: string): Promise<TokenPayload> {
+    try {
+      return await this.jwtService.verifyAsync<TokenPayload>(token);
+    } catch {
+      throw new UnauthorizedException('Invalid or expired access token');
+    }
   }
 
   /** Returns the expiry Date for a refresh token based on config */

@@ -2,21 +2,35 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore, type FormEvent } from "react";
 import { Button } from "@/components/ui/Button";
 import { CameraIcon, CheckIcon, ChevronLeftIcon, MapPinIcon } from "@/components/ui/Icon";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
-import { useSession } from "@/features/auth/session";
 import type { ListingCondition } from "@/features/listings/types";
+import {
+  createListingDraft,
+  getCategories,
+  getLocationTree,
+  publishListing,
+  updateListingDraft,
+  uploadListingImage,
+} from "@/features/listings/api";
 import { useLanguage, useTranslations } from "@/il8n/LanguageProvider";
-import { categories, cities, subcitiesByCity } from "@/lib/mock-data";
+import {
+  getIsAuthenticated,
+  getServerIsAuthenticated,
+  subscribeAuthSession,
+} from "@/lib/auth";
 import { cn } from "@/lib/utils";
+import type { Category } from "@/features/catalog/types";
 
 type SellStep = "category" | "details" | "pricing" | "review";
 
 const STEPS: SellStep[] = ["category", "details", "pricing", "review"];
 const CONDITIONS: ListingCondition[] = ["new", "like_new", "good", "fair", "for_parts"];
+const SELL_DRAFT_STORAGE_KEY = "merkeb.sell-draft";
+const SELL_SUBMISSION_STORAGE_KEY = "merkeb.sell-submission";
 
 type SellDraft = {
   categoryId: string;
@@ -27,7 +41,7 @@ type SellDraft = {
   isNegotiable: boolean;
   acceptsSwap: boolean;
   condition: ListingCondition | "";
-  city: (typeof cities)[number] | "";
+  city: string;
   subcity: string;
   landmark: string;
 };
@@ -53,21 +67,61 @@ function stepIndex(step: SellStep) {
 export function SellFlow() {
   const t = useTranslations();
   const { locale } = useLanguage();
-  const { isAuthenticated } = useSession();
+  const isAuthenticated = useSyncExternalStore(
+    subscribeAuthSession,
+    getIsAuthenticated,
+    getServerIsAuthenticated
+  );
   const router = useRouter();
 
   const [step, setStep] = useState<SellStep>("category");
   const [draft, setDraft] = useState<SellDraft>(emptyDraft);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [draftListingId, setDraftListingId] = useState<string | null>(null);
+  const [imageUploaded, setImageUploaded] = useState(false);
+  const [availableCategories, setAvailableCategories] = useState<Category[]>([]);
+  const [locations, setLocations] = useState<Awaited<ReturnType<typeof getLocationTree>>>([]);
   const [errors, setErrors] = useState<Partial<Record<keyof SellDraft, string>>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
   const [published, setPublished] = useState(false);
 
+  useEffect(() => {
+    try {
+      const stored = window.sessionStorage.getItem(SELL_DRAFT_STORAGE_KEY);
+      if (stored) {
+        const saved = JSON.parse(stored) as { draft?: SellDraft; step?: SellStep };
+        if (saved.draft) setDraft({ ...emptyDraft, ...saved.draft, photoPreview: null });
+        if (saved.step && STEPS.includes(saved.step)) setStep(saved.step);
+        window.sessionStorage.removeItem(SELL_DRAFT_STORAGE_KEY);
+      }
+      const submission = window.sessionStorage.getItem(SELL_SUBMISSION_STORAGE_KEY);
+      if (submission) {
+        const parsed = JSON.parse(submission) as { listingId?: string; imageUploaded?: boolean };
+        setDraftListingId(parsed.listingId ?? null);
+        setImageUploaded(parsed.imageUploaded === true);
+      }
+    } catch {
+      window.sessionStorage.removeItem(SELL_DRAFT_STORAGE_KEY);
+      window.sessionStorage.removeItem(SELL_SUBMISSION_STORAGE_KEY);
+    }
+  }, []);
+
+  useEffect(() => {
+    void Promise.all([getCategories(), getLocationTree()]).then(([nextCategories, nextLocations]) => {
+      setAvailableCategories(nextCategories);
+      setLocations(nextLocations);
+    });
+  }, []);
+
   const selectedCategory = useMemo(
-    () => categories.find((c) => c.id === draft.categoryId) ?? null,
-    [draft.categoryId]
+    () => availableCategories.find((c) => c.id === draft.categoryId) ?? null,
+    [availableCategories, draft.categoryId]
   );
 
-  const subcities = draft.city ? (subcitiesByCity[draft.city] ?? []) : [];
+  const selectedCity = locations.find((location) => location.id === draft.city) ?? null;
+  const selectedSubcity = selectedCity?.children?.find((location) => location.id === draft.subcity) ?? null;
+  const subcities = selectedCity?.children ?? [];
 
   function patch(next: Partial<SellDraft>) {
     setDraft((prev) => ({ ...prev, ...next }));
@@ -83,6 +137,7 @@ export function SellFlow() {
     if (current === "details") {
       if (draft.title.trim().length < 4) nextErrors.title = t("sell.errors.title");
       if (draft.description.trim().length < 20) nextErrors.description = t("sell.errors.description");
+      if (!photoFile && !draft.photoPreview) nextErrors.photoPreview = "Add at least one photo.";
     }
 
     if (current === "pricing") {
@@ -112,6 +167,8 @@ export function SellFlow() {
   }
 
   function handlePhotoChange(file: File | null) {
+    setPhotoFile(file);
+    setImageUploaded(false);
     if (!file) {
       patch({ photoPreview: null });
       return;
@@ -121,21 +178,64 @@ export function SellFlow() {
     patch({ photoPreview: url });
   }
 
-  function handlePublish(e: FormEvent) {
+  async function handlePublish(e: FormEvent) {
     e.preventDefault();
     if (!validate("pricing") || !validate("details") || !validate("category")) {
       setStep("category");
       return;
     }
     if (!isAuthenticated) {
-      router.push("/sign-in?mode=login");
+      window.sessionStorage.setItem(
+        SELL_DRAFT_STORAGE_KEY,
+        JSON.stringify({ draft: { ...draft, photoPreview: null }, step })
+      );
+      router.push("/sign-in?mode=login&next=%2Fsell");
       return;
     }
     setSubmitting(true);
-    window.setTimeout(() => {
-      setSubmitting(false);
+    setSubmitError("");
+    try {
+      const input = {
+        title: draft.title.trim(),
+        description: draft.description.trim(),
+        condition: draft.condition.toUpperCase(),
+        priceCents: Math.round(Number(draft.priceEtb) * 100),
+        isNegotiable: draft.isNegotiable,
+        attributes: { acceptsSwap: draft.acceptsSwap },
+        categoryId: draft.categoryId,
+        cityId: draft.city,
+        ...(draft.subcity ? { subcityId: draft.subcity } : {}),
+        ...(draft.landmark.trim() ? { landmark: draft.landmark.trim() } : {}),
+      };
+      let listingId = draftListingId;
+      if (listingId) {
+        await updateListingDraft(listingId, input);
+      } else {
+        const created = await createListingDraft(input);
+        listingId = created.listingId;
+        setDraftListingId(listingId);
+        window.sessionStorage.setItem(
+          SELL_SUBMISSION_STORAGE_KEY,
+          JSON.stringify({ listingId, imageUploaded: false })
+        );
+      }
+      if (!imageUploaded && photoFile) {
+        await uploadListingImage(listingId, photoFile);
+        setImageUploaded(true);
+        window.sessionStorage.setItem(
+          SELL_SUBMISSION_STORAGE_KEY,
+          JSON.stringify({ listingId, imageUploaded: true })
+        );
+      }
+      await publishListing(listingId);
+      window.sessionStorage.removeItem(SELL_DRAFT_STORAGE_KEY);
+      window.sessionStorage.removeItem(SELL_SUBMISSION_STORAGE_KEY);
       setPublished(true);
-    }, 700);
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "Unable to publish the listing.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   if (published) {
@@ -155,6 +255,9 @@ export function SellFlow() {
             variant="outline"
             onClick={() => {
               setDraft(emptyDraft);
+              setPhotoFile(null);
+              setDraftListingId(null);
+              setImageUploaded(false);
               setStep("category");
               setPublished(false);
               setErrors({});
@@ -186,7 +289,7 @@ export function SellFlow() {
               <p className="mt-1 text-sm text-ink-muted">{t("sell.categoryBody")}</p>
             </div>
             <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3">
-              {categories.map((cat) => {
+              {availableCategories.map((cat) => {
                 const selected = draft.categoryId === cat.id;
                 return (
                   <button
@@ -281,6 +384,11 @@ export function SellFlow() {
                 />
               </span>
             </label>
+            {errors.photoPreview && (
+              <p role="alert" className="text-xs font-medium text-danger">
+                {errors.photoPreview}
+              </p>
+            )}
 
             <Input
               label={t("sell.itemTitle")}
@@ -406,14 +514,14 @@ export function SellFlow() {
                 label={t("sell.city")}
                 value={draft.city}
                 onChange={(e) => {
-                  const city = e.target.value as SellDraft["city"];
+                  const city = e.target.value;
                   patch({ city, subcity: "" });
                 }}
               >
                 <option value="">{t("sell.cityPlaceholder")}</option>
-                {cities.map((city) => (
-                  <option key={city} value={city}>
-                    {city}
+                {locations.map((city) => (
+                  <option key={city.id} value={city.id}>
+                    {locale === "am" ? city.nameAm : city.nameEn}
                   </option>
                 ))}
               </Select>
@@ -431,8 +539,8 @@ export function SellFlow() {
               >
                 <option value="">{t("sell.subcityPlaceholder")}</option>
                 {subcities.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
+                  <option key={s.id} value={s.id}>
+                    {locale === "am" ? s.nameAm : s.nameEn}
                   </option>
                 ))}
               </Select>
@@ -508,7 +616,7 @@ export function SellFlow() {
                   <div>
                     <dt className="text-ink-muted">{t("listing.location")}</dt>
                     <dd className="font-medium text-ink">
-                      {[draft.subcity, draft.city].filter(Boolean).join(", ") || "—"}
+                      {[selectedSubcity?.nameEn, selectedCity?.nameEn].filter(Boolean).join(", ") || "—"}
                     </dd>
                   </div>
                 </dl>
@@ -527,6 +635,7 @@ export function SellFlow() {
         )}
 
         <footer className="flex items-center justify-between gap-3 border-t border-border pt-4">
+          {submitError && <p role="alert" className="text-sm text-danger">{submitError}</p>}
           {stepIndex(step) > 0 ? (
             <Button type="button" variant="ghost" onClick={goBack}>
               <ChevronLeftIcon className="h-4 w-4" />

@@ -1,9 +1,11 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
-import { categories, subcitiesByCity } from "@/lib/mock-data";
 import { useLanguage, useTranslations } from "@/il8n/LanguageProvider";
+import { apiRequest } from "@/lib/api";
+import type { Category } from "@/features/catalog/types";
 import type { SearchFilters } from "../types";
 
 const conditions: SearchFilters["condition"][] = ["new", "like_new", "good", "fair", "for_parts"];
@@ -18,6 +20,17 @@ export function ListingFilters({
 }) {
   const { locale } = useLanguage();
   const t = useTranslations();
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [subcities, setSubcities] = useState<{ id: string; nameEn: string; nameAm: string }[]>([]);
+
+  useEffect(() => {
+    apiRequest<{ success: true; categories: Category[] }>("/categories")
+      .then((response) => setCategories(response.categories))
+      .catch(() => setCategories([]));
+    apiRequest<{ success: true; locations: { id: string; nameEn: string; nameAm: string }[] }>("/locations?type=SUBCITY")
+      .then((response) => setSubcities(response.locations))
+      .catch(() => setSubcities([]));
+  }, []);
 
   return (
     <div className="flex flex-col gap-5">
@@ -78,9 +91,9 @@ export function ListingFilters({
         onChange={(e) => onChange({ subcity: e.target.value || undefined })}
       >
         <option value="">{t("search.anyLocation")}</option>
-        {(subcitiesByCity["Addis Ababa"] ?? []).map((subcity) => (
-          <option key={subcity} value={subcity}>
-            {subcity}
+        {subcities.map((subcity) => (
+          <option key={subcity.id} value={subcity.nameEn}>
+            {locale === "am" ? subcity.nameAm : subcity.nameEn}
           </option>
         ))}
       </Select>

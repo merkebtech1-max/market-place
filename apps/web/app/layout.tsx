@@ -1,20 +1,7 @@
 import type { Metadata, Viewport } from "next";
-import { Noto_Sans, Noto_Sans_Ethiopic } from "next/font/google";
 import { LanguageProvider } from "@/il8n/LanguageProvider";
 import { defaultLocale } from "@/il8n/config";
 import "./globals.css";
-
-const notoSans = Noto_Sans({
-  subsets: ["latin"],
-  variable: "--font-latin",
-  display: "swap",
-});
-
-const notoSansEthiopic = Noto_Sans_Ethiopic({
-  subsets: ["ethiopic"],
-  variable: "--font-ethiopic",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: "Merkeb Market",
@@ -47,7 +34,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       lang={defaultLocale}
       translate="no"
       suppressHydrationWarning
-      className={`notranslate ${notoSans.variable} ${notoSansEthiopic.variable}`}
+      className="notranslate"
     >
       <body className="flex min-h-screen flex-col bg-paper text-ink antialiased">
         <LanguageProvider>{children}</LanguageProvider>
