@@ -1,6 +1,5 @@
-import { PlaceholderPage } from "@/components/layout/PlaceholderPage";
-import { T } from "@/il8n/T";
+import { AdminConsole } from "@/features/admin/components/AdminConsole";
 
 export default function AdminModerationPage() {
-  return <PlaceholderPage title={<T k="placeholder.adminModerationTitle" />} />;
+  return <AdminConsole section="moderation" />;
 }

@@ -13,7 +13,7 @@ import { useLanguage } from "@/il8n/LanguageProvider";
 import { cn, formatETB } from "@/lib/utils";
 import { getConversation } from "../queries";
 import { apiMessageToChat } from "../queries";
-import { markThreadRead, sendThreadMessage } from "../action";
+import { blockUser, getBlockedUsers, markThreadRead, sendThreadMessage, unblockUser } from "../action";
 import { createReservation } from "@/features/reservations/api";
 import type { ChatMessage, Conversation } from "../types";
 
@@ -36,9 +36,12 @@ export function Thread({ id }: { id: string }) {
   const endRef = useRef<HTMLLIElement>(null);
   const [meetupOpen, setMeetupOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
+  const [reportedMessageId, setReportedMessageId] = useState<string>();
   const [sending, setSending] = useState(false);
   const [messageError, setMessageError] = useState("");
   const [reserving, setReserving] = useState(false);
+  const [blocked, setBlocked] = useState(false);
+  const [blockBusy, setBlockBusy] = useState(false);
   const wantsOffer = useSearchParams().get("offer") === "1";
   const [sheet, setSheet] = useState<{ mode: "offer" | "counter"; replaces?: string; lastCents?: number } | null>(null);
 
@@ -46,7 +49,12 @@ export function Thread({ id }: { id: string }) {
     getConversation(id).then((c) => {
       setConvo(c);
       setMessages(c?.messages ?? []);
-      if (c) void markThreadRead(c.id);
+      if (c) {
+        void markThreadRead(c.id);
+        void getBlockedUsers()
+          .then((users) => setBlocked(users.some((user) => user.id === c.peerId)))
+          .catch(() => undefined);
+      }
       if (c?.role === "buying" && wantsOffer) setSheet({ mode: "offer" });
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -58,7 +66,7 @@ export function Thread({ id }: { id: string }) {
 
   const send = async (body: string) => {
     const text = body.trim();
-    if (!text || !convo || sending) return;
+    if (!text || !convo || sending || blocked) return;
     setSending(true);
     setMessageError("");
     try {
@@ -82,7 +90,7 @@ export function Thread({ id }: { id: string }) {
     setMessages((m) => m.map((x) => (x.id === msgId ? { ...x, meetupStatus: "accepted" as const } : x)));
 
   const reserve = async () => {
-    if (!convo || convo.role !== "buying") return;
+    if (!convo || convo.role !== "buying" || blocked) return;
     setReserving(true);
     setMessageError("");
     try {
@@ -92,6 +100,21 @@ export function Thread({ id }: { id: string }) {
       setMessageError(error instanceof Error ? error.message : t("reservation.createError"));
     } finally {
       setReserving(false);
+    }
+  };
+
+  const toggleBlock = async () => {
+    if (!convo || blockBusy) return;
+    setBlockBusy(true);
+    setMessageError("");
+    try {
+      if (blocked) await unblockUser(convo.peerId);
+      else await blockUser(convo.peerId);
+      setBlocked((current) => !current);
+    } catch (error) {
+      setMessageError(error instanceof Error ? error.message : "Unable to update block status.");
+    } finally {
+      setBlockBusy(false);
     }
   };
 
@@ -169,8 +192,11 @@ export function Thread({ id }: { id: string }) {
           <MapPinIcon className="h-4 w-4" />
           <span className="hidden sm:inline">{t("meetup.short")}</span>
         </Button>
-        <Button variant="ghost" size="sm" onClick={() => setReportOpen(true)}>
+        <Button variant="ghost" size="sm" onClick={() => { setReportedMessageId(undefined); setReportOpen(true); }}>
           {t("report.short")}
+        </Button>
+        <Button variant="ghost" size="sm" loading={blockBusy} onClick={toggleBlock}>
+          {blocked ? "Unblock" : "Block"}
         </Button>
       </div>
       <p className="mx-3 mt-3 flex items-start gap-2 rounded-control bg-primary-soft px-3 py-2 text-xs text-ink">
@@ -183,7 +209,7 @@ export function Thread({ id }: { id: string }) {
           <MapPinIcon className="h-4 w-4" />
           {t("meetup.short")}
         </Button>
-        <Button variant="outline" size="sm" className="whitespace-normal px-1 text-xs" onClick={() => setReportOpen(true)}>
+        <Button variant="outline" size="sm" className="whitespace-normal px-1 text-xs" onClick={() => { setReportedMessageId(undefined); setReportOpen(true); }}>
           <ShieldIcon className="h-4 w-4" />
           {t("report.short")}
         </Button>
@@ -191,7 +217,7 @@ export function Thread({ id }: { id: string }) {
 
       {convo.role === "buying" && (
         <div className="mx-3 mt-3">
-          <Button fullWidth onClick={reserve} loading={reserving}>
+          <Button fullWidth onClick={reserve} loading={reserving} disabled={blocked}>
             {t("reservation.reserve")}
           </Button>
         </div>
@@ -273,7 +299,16 @@ export function Thread({ id }: { id: string }) {
                 m.mine ? "self-end bg-primary text-white" : "self-start bg-ink/6 text-ink"
               )}
             >
-              {m.body}
+              <p>{m.body}</p>
+              {!m.mine && (
+                <button
+                  type="button"
+                  onClick={() => { setReportedMessageId(m.id); setReportOpen(true); }}
+                  className="mt-1 text-xs font-medium text-primary underline-offset-2 hover:underline"
+                >
+                  Report message
+                </button>
+              )}
             </li>
           )
         )}
@@ -295,6 +330,7 @@ export function Thread({ id }: { id: string }) {
             <button
               key={k}
               onClick={() => send(t(`chat.quick.${k}`))}
+              disabled={blocked}
               className="tap-target shrink-0 rounded-full border border-border px-3 text-xs text-ink hover:bg-primary-soft"
             >
               {t(`chat.quick.${k}`)}
@@ -313,15 +349,26 @@ export function Thread({ id }: { id: string }) {
             onChange={(e) => setDraft(e.target.value)}
             placeholder={t("chat.placeholder")}
             aria-label={t("chat.placeholder")}
+            disabled={blocked}
             className="h-11 min-w-0 flex-1 rounded-control border border-border bg-surface px-3 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
           />
-          <Button type="submit" disabled={!draft.trim() || sending} loading={sending}>
+          <Button type="submit" disabled={!draft.trim() || sending || blocked} loading={sending}>
             {t("chat.send")}
           </Button>
         </form>
       </div>
       <MeetupSheet open={meetupOpen} onOpenChange={setMeetupOpen} onSubmit={proposeMeetup} />
-      <ReportSheet open={reportOpen} onOpenChange={setReportOpen} defaultTarget="user" />
+      <ReportSheet
+        key={reportedMessageId ?? "conversation"}
+        open={reportOpen}
+        onOpenChange={(open) => { setReportOpen(open); if (!open) setReportedMessageId(undefined); }}
+        defaultTarget={reportedMessageId ? "message" : "user"}
+        targetIds={{
+          user: convo.peerId,
+          listing: convo.listingId,
+          ...(reportedMessageId ? { message: reportedMessageId } : {}),
+        }}
+      />
       <OfferSheet
         key={`${sheet?.mode}-${sheet?.replaces}`}
         open={sheet !== null}

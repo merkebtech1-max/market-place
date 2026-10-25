@@ -221,7 +221,7 @@ function ListingSummary({ listing, className }: { listing: Listing; className?: 
         <ShareIcon className="h-4 w-4" />
         <T k="common.share" />
       </button>
-      <ReportListingButton />
+      <ReportListingButton listingId={listing.id} />
 
       <div className="border-t border-border pt-4">
         <SellerHeader seller={listing.seller} />

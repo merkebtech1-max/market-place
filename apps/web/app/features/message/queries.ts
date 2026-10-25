@@ -31,6 +31,7 @@ function toConversation(thread: ApiThread, messages: ChatMessage[]): Conversatio
   return {
     id: thread.id,
     listingId: thread.listing.id,
+    peerId: thread.counterparty.id,
     peerName: thread.counterparty.displayName,
     listingTitle: thread.listing.title,
     listingPriceCents: thread.listing.priceCents,
