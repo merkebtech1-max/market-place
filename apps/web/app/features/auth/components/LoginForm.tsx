@@ -38,7 +38,7 @@ export function LoginForm({ returnTo = "/dashboard" }: { returnTo?: string }) {
   async function sendCode(event?: FormEvent<HTMLFormElement>) {
     event?.preventDefault();
     const normalizedPhone = normalizeEthiopianPhone(phoneInput);
-    if (!/^\+2519\d{8}$/.test(normalizedPhone)) {
+    if (!/^\+251[79]\d{8}$/.test(normalizedPhone)) {
       setError(t("auth.invalidPhone"));
       return;
     }

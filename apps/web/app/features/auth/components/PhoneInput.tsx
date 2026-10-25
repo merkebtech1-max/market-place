@@ -2,9 +2,16 @@ import { Input } from "@/components/ui/Input";
 
 export function normalizeEthiopianPhone(value: string) {
   const compact = value.replace(/[\s()-]/g, "");
-  if (/^09\d{8}$/.test(compact)) return `+251${compact.slice(1)}`;
-  if (/^9\d{8}$/.test(compact)) return `+251${compact}`;
+  if (/^0[79]\d{8}$/.test(compact)) return `+251${compact.slice(1)}`;
+  if (/^[79]\d{8}$/.test(compact)) return `+251${compact}`;
   return compact;
+}
+
+function localMobileDigits(value: string) {
+  let digits = value.replace(/\D/g, "");
+  if (digits.startsWith("251")) digits = digits.slice(3);
+  if (digits.startsWith("0")) digits = digits.slice(1);
+  return digits.slice(0, 9);
 }
 
 export function PhoneInput({
@@ -25,9 +32,12 @@ export function PhoneInput({
       type="tel"
       inputMode="tel"
       autoComplete="tel"
-      placeholder="+251 9XX XXX XXX"
+      prefix="+251"
+      placeholder="9XX XXX XXX or 7XX XXX XXX"
+      pattern="[79][0-9]{8}"
+      maxLength={9}
       value={value}
-      onChange={(event) => onChange(event.target.value)}
+      onChange={(event) => onChange(localMobileDigits(event.target.value))}
       required
     />
   );
