@@ -1,9 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { ThreadCreateService } from './thread-create.service.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { Prisma } from '../../generated/prisma/client.js';
 import { ListingStatus, UserStatus } from '../../generated/prisma/enums.js';
+import { BlockCheckService } from '../../users-catalog/services/block-check.service.js';
 
 describe('ThreadCreateService', () => {
   let service: ThreadCreateService;
@@ -13,6 +14,8 @@ describe('ThreadCreateService', () => {
     user: { findUnique: vi.fn() },
     thread: { findUnique: vi.fn(), create: vi.fn() },
   };
+
+  const blockCheckMock = { isBlocked: vi.fn() };
 
   const threadRow = {
     id: 'thread-1',
@@ -26,11 +29,13 @@ describe('ThreadCreateService', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
+    blockCheckMock.isBlocked.mockResolvedValue(false);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ThreadCreateService,
         { provide: PrismaService, useValue: prismaMock },
+        { provide: BlockCheckService, useValue: blockCheckMock },
       ],
     }).compile();
 
@@ -135,6 +140,16 @@ describe('ThreadCreateService', () => {
     mockActiveListing('buyer-1');
 
     await expect(service.createThread('listing-1', 'buyer-1')).rejects.toThrow(BadRequestException);
+    expect(prismaMock.thread.create).not.toHaveBeenCalled();
+  });
+
+  it('rejects thread creation when either user has blocked the other', async () => {
+    mockActiveListing();
+    mockActiveBuyer();
+    blockCheckMock.isBlocked.mockResolvedValue(true);
+
+    await expect(service.createThread('listing-1', 'buyer-1')).rejects.toThrow(ForbiddenException);
+    expect(blockCheckMock.isBlocked).toHaveBeenCalledWith('buyer-1', 'seller-1');
     expect(prismaMock.thread.create).not.toHaveBeenCalled();
   });
 

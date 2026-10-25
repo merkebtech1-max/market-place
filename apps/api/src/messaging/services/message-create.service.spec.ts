@@ -1,10 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, InternalServerErrorException } from '@nestjs/common';
 import { MessageCreateService } from './message-create.service.js';
 import { ContactInfoService } from './contact-info.service.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { MessageType, ViolationPatternType } from '../../generated/prisma/enums.js';
 import { MESSAGE_MAX_LENGTH } from '../dto/create-message.dto.js';
+import { BlockCheckService } from '../../users-catalog/services/block-check.service.js';
 
 describe('MessageCreateService', () => {
   let service: MessageCreateService;
@@ -18,6 +19,8 @@ describe('MessageCreateService', () => {
 
   const contactInfoMock = { inspect: vi.fn() };
 
+  const blockCheckMock = { isBlocked: vi.fn() };
+
   const createdMessage = {
     id: 'message-1',
     threadId: 'thread-1',
@@ -28,16 +31,18 @@ describe('MessageCreateService', () => {
     createdAt: new Date(),
   };
 
-  const thread = { id: 'thread-1', unlockedAt: null };
+  const thread = { id: 'thread-1', unlockedAt: null, buyerId: 'buyer-1', sellerId: 'seller-1' };
 
   beforeEach(async () => {
     vi.clearAllMocks();
+    blockCheckMock.isBlocked.mockResolvedValue(false);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         MessageCreateService,
         { provide: PrismaService, useValue: prismaMock },
         { provide: ContactInfoService, useValue: contactInfoMock },
+        { provide: BlockCheckService, useValue: blockCheckMock },
       ],
     }).compile();
 
@@ -92,7 +97,7 @@ describe('MessageCreateService', () => {
     prismaMock.thread.update.mockResolvedValue({});
     contactInfoMock.inspect.mockReturnValue({ safe: true, body: 'hello', violations: [] });
 
-    await service.createMessage({ id: 'other-thread-9', unlockedAt: null }, 'seller-9', 'hello');
+    await service.createMessage({ id: 'other-thread-9', unlockedAt: null, buyerId: 'buyer-9', sellerId: 'seller-9' }, 'seller-9', 'hello');
     expect(prismaMock.message.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({ threadId: 'other-thread-9', senderId: 'seller-9' }),
@@ -148,10 +153,18 @@ describe('MessageCreateService', () => {
     prismaMock.message.create.mockResolvedValue(createdMessage);
     prismaMock.thread.update.mockResolvedValue({});
 
-    const unlockedThread = { id: 'thread-1', unlockedAt: new Date('2026-01-01') };
+    const unlockedThread = { id: 'thread-1', unlockedAt: new Date('2026-01-01'), buyerId: 'buyer-1', sellerId: 'seller-1' };
     await service.createMessage(unlockedThread, 'buyer-1', 'Call 0912345678');
 
     expect(contactInfoMock.inspect).toHaveBeenCalledWith(unlockedThread, 'Call 0912345678');
+  });
+
+  it('rejects sending when the sender has blocked or is blocked by the other participant', async () => {
+    blockCheckMock.isBlocked.mockResolvedValue(true);
+
+    await expect(service.createMessage(thread, 'buyer-1', 'hello')).rejects.toThrow(ForbiddenException);
+    expect(blockCheckMock.isBlocked).toHaveBeenCalledWith('buyer-1', 'seller-1');
+    expect(prismaMock.$transaction).not.toHaveBeenCalled();
   });
 
   it('maps unexpected database failures to 500 (InternalServerError), not 400', async () => {

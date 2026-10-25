@@ -1,9 +1,10 @@
-import { BadRequestException, Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { MessageType } from '../../generated/prisma/enums.js';
 import { MESSAGE_MAX_LENGTH } from '../dto/create-message.dto.js';
 import { MESSAGE_PUBLIC_SELECT, type PublicMessage } from '../message-public.select.js';
 import { ContactInfoService } from './contact-info.service.js';
+import { BlockCheckService } from '../../users-catalog/services/block-check.service.js';
 
 /**
  * Owns message creation. Authorization (JWT + participant + ACTIVE) is done by
@@ -26,10 +27,11 @@ export class MessageCreateService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly contactInfo: ContactInfoService,
+    private readonly blockCheck: BlockCheckService,
   ) {}
 
   async createMessage(
-    thread: { id: string; unlockedAt?: Date | null },
+    thread: { id: string; unlockedAt?: Date | null; buyerId: string; sellerId: string },
     senderId: string,
     body: string,
   ): Promise<PublicMessage> {
@@ -42,6 +44,14 @@ export class MessageCreateService {
       }
       if (trimmed.length > MESSAGE_MAX_LENGTH) {
         throw new BadRequestException(`Message cannot exceed ${MESSAGE_MAX_LENGTH} characters.`);
+      }
+
+      // Defense-in-depth: a thread may predate the block, but once blocked,
+      // neither participant can send new messages through it.
+      const otherParticipantId = thread.buyerId === senderId ? thread.sellerId : thread.buyerId;
+      const blocked = await this.blockCheck.isBlocked(senderId, otherParticipantId);
+      if (blocked) {
+        throw new ForbiddenException('You cannot message this user.');
       }
 
       const detected = this.contactInfo.inspect(thread, trimmed);
@@ -93,7 +103,7 @@ export class MessageCreateService {
       // failure, transaction abort — is NOT the client's bad request, so it
       // becomes a 500 with a generic message; the inner detail is logged
       // server-side only and never leaks to the client.
-      if (error instanceof BadRequestException) throw error;
+      if (error instanceof BadRequestException || error instanceof ForbiddenException) throw error;
       this.logger.error(`[ERROR] Failed to create message for threadId=${thread.id} - ${error instanceof Error ? error.message : 'Unknown error'}`);
       throw new InternalServerErrorException('Unable to send your message at this time. Please try again later.');
     }

@@ -9,9 +9,10 @@ import { MessageListService } from './services/message-list.service.js';
 import { MessageReadService } from './services/message-read.service.js';
 import { ContactInfoService } from './services/contact-info.service.js';
 import { ThreadParticipantGuard } from './guards/thread-participant.guard.js';
+import { UsersCatalogModule } from '../users-catalog/users-catalog.module.js';
 
 @Module({
-  imports: [PrismaModule, AuthModule],
+  imports: [PrismaModule, AuthModule, UsersCatalogModule],
   controllers: [ThreadsController],
   providers: [ThreadCreateService, ThreadListService, MessageCreateService, MessageListService, MessageReadService, ContactInfoService, ThreadParticipantGuard],
 })
