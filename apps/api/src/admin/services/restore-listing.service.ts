@@ -1,6 +1,8 @@
 import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service.js';
-import { ListingStatus } from '../../generated/prisma/enums.js';
+import { ListingStatus, UserStatus } from '../../generated/prisma/enums.js';
+
+const LISTING_LIFETIME_MS = 5 * 365 * 24 * 60 * 60 * 1000;
 
 /** Safe listing summary returned after restoring a listing. */
 export interface RestoreListingResult {
@@ -28,7 +30,13 @@ export class RestoreListingService {
     const result = await this.prisma.$transaction(async (tx) => {
       const listing = await tx.listing.findUnique({
         where: { id: listingId },
-        select: { id: true, status: true },
+        select: {
+          id: true,
+          status: true,
+          publishedAt: true,
+          seller: { select: { status: true } },
+          _count: { select: { images: true } },
+        },
       });
 
       if (!listing) {
@@ -37,13 +45,26 @@ export class RestoreListingService {
       if (listing.status !== ListingStatus.REMOVED) {
         throw new ConflictException('Listing is not removed.');
       }
+      if (listing.seller.status !== UserStatus.ACTIVE) {
+        throw new ConflictException('Cannot restore a listing whose seller account is not active.');
+      }
+      if (listing._count.images === 0) {
+        throw new ConflictException('Cannot restore a listing without an image.');
+      }
+
+      const now = new Date();
+      const expiresAt = new Date(now.getTime() + LISTING_LIFETIME_MS);
 
       // Conditional update: only REMOVED → ACTIVE. If a concurrent
       // moderation request already changed the status, 0 rows match and
       // the transaction rolls back.
       const updated = await tx.listing.updateMany({
         where: { id: listing.id, status: ListingStatus.REMOVED },
-        data: { status: ListingStatus.ACTIVE },
+        data: {
+          status: ListingStatus.ACTIVE,
+          publishedAt: listing.publishedAt ?? now,
+          expiresAt,
+        },
       });
       if (updated.count === 0) {
         throw new ConflictException('Listing is not removed.');
@@ -54,7 +75,11 @@ export class RestoreListingService {
           actorId: moderatorId,
           action: 'LISTING_RESTORED',
           target: listing.id,
-          diff: { from: ListingStatus.REMOVED, to: ListingStatus.ACTIVE },
+          diff: {
+            from: ListingStatus.REMOVED,
+            to: ListingStatus.ACTIVE,
+            expiresAt: expiresAt.toISOString(),
+          },
         },
       });
 
