@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
 import { useLanguage } from "@/il8n/LanguageProvider";
 import { cn } from "@/lib/utils";
+import { createReport } from "../action";
 
 export const REPORT_REASONS = ["counterfeit", "stolen", "prohibited", "scam", "abuse", "wrongCategory"] as const;
 export const REPORT_TARGETS = ["listing", "user", "message"] as const;
@@ -16,19 +17,23 @@ export function ReportSheet({
   open,
   onOpenChange,
   defaultTarget = "listing",
+  targetIds,
   onSubmit,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   defaultTarget?: ReportTarget;
-  onSubmit?: (report: { target: ReportTarget; reason: ReportReason; details: string }) => void;
+  targetIds: Partial<Record<ReportTarget, string>>;
+  onSubmit?: (report: { target: ReportTarget; reason: ReportReason; details: string }) => void | Promise<void>;
 }) {
   const { t } = useLanguage();
   const [target, setTarget] = useState<ReportTarget>(defaultTarget);
   const [reason, setReason] = useState<ReportReason | null>(null);
   const [details, setDetails] = useState("");
   const [sent, setSent] = useState(false);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState("");
+  const [sending, setSending] = useState(false);
+  const availableTargets = REPORT_TARGETS.filter((value) => Boolean(targetIds[value]));
 
   const close = (o: boolean) => {
     onOpenChange(o);
@@ -36,14 +41,31 @@ export function ReportSheet({
       setSent(false);
       setReason(null);
       setDetails("");
-      setError(false);
+      setError("");
+      setSending(false);
     }
   };
 
-  const submit = () => {
-    if (!reason) return setError(true);
-    onSubmit?.({ target, reason, details });
-    setSent(true);
+  const submit = async () => {
+    if (!reason) return setError(t("report.errReason"));
+    const targetId = targetIds[target];
+    if (!targetId) return setError("This report target is unavailable.");
+    setSending(true);
+    setError("");
+    try {
+      if (onSubmit) await onSubmit({ target, reason, details });
+      else await createReport({
+        targetType: target.toUpperCase() as "LISTING" | "USER" | "MESSAGE",
+        targetId,
+        reason: reason.toUpperCase(),
+        ...(details.trim() ? { note: details.trim() } : {}),
+      });
+      setSent(true);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Unable to submit the report.");
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -63,7 +85,7 @@ export function ReportSheet({
             <Button variant="outline" onClick={() => close(false)} className="flex-1">
               {t("chat.cancel")}
             </Button>
-            <Button onClick={submit} className="flex-1">
+            <Button onClick={submit} loading={sending} className="flex-1">
               {t("report.send")}
             </Button>
           </>
@@ -78,7 +100,7 @@ export function ReportSheet({
         <div className="space-y-4">
           <p className="text-sm text-ink-muted">{t("report.subtitle")}</p>
           <div role="tablist" className="flex gap-2">
-            {REPORT_TARGETS.map((k) => (
+            {availableTargets.map((k) => (
               <button
                 key={k}
                 role="tab"
@@ -110,7 +132,7 @@ export function ReportSheet({
                     checked={reason === r}
                     onChange={() => {
                       setReason(r);
-                      setError(false);
+                      setError("");
                     }}
                     className="accent-primary"
                   />
@@ -120,7 +142,7 @@ export function ReportSheet({
             </div>
             {error && (
               <p role="alert" className="mt-1 text-xs font-medium text-danger">
-                {t("report.errReason")}
+                {error}
               </p>
             )}
           </fieldset>

@@ -6,7 +6,7 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter.js';
 import { Request, Response, NextFunction } from 'express';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { rawBody: true });
   const logger = new Logger('Bootstrap');
 
   const configService = app.get(ConfigService);

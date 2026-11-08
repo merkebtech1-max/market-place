@@ -6,11 +6,12 @@ import { ReservationCreateService } from './services/reservation-create.service.
 import { ReservationLifecycleService } from './services/reservation-lifecycle.service.js';
 import { ReservationListService } from './services/reservation-list.service.js';
 import { ReservationQrService } from './services/reservation-qr.service.js';
+import { ReservationPaymentService } from './services/reservation-payment.service.js';
 
 @Module({
   imports: [PrismaModule, AuthModule],
   controllers: [ReservationsController],
-  providers: [ReservationCreateService, ReservationLifecycleService, ReservationListService, ReservationQrService],
+  providers: [ReservationCreateService, ReservationLifecycleService, ReservationListService, ReservationQrService, ReservationPaymentService],
   exports: [ReservationLifecycleService],
 })
 export class TransactionsModule {}

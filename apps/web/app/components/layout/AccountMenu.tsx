@@ -14,6 +14,7 @@ import {
   UserIcon,
 } from "@/components/ui/Icon";
 import { useSavedIds } from "@/features/listings/saved";
+import { useAccountProfile } from "@/features/auth/profile";
 import { useTranslations } from "@/il8n/LanguageProvider";
 import {
   getIsAuthenticated,
@@ -61,6 +62,8 @@ export function AccountMenuContent({ onNavigate }: { onNavigate?: () => void }) 
     getServerIsAuthenticated
   );
   const savedCount = useSavedIds().length;
+  const profile = useAccountProfile(isAuthenticated);
+  const accountName = profile?.displayName || t("nav.account");
 
   if (!isAuthenticated) {
     return (
@@ -106,10 +109,10 @@ export function AccountMenuContent({ onNavigate }: { onNavigate?: () => void }) 
         onClick={onNavigate}
         className="flex items-center gap-3 border-b border-border p-4 hover:bg-primary-soft/40"
       >
-        <Avatar name="You" size="lg" />
+        <Avatar name={accountName} size="lg" mode="letter" />
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm font-semibold text-ink">{t("nav.account")}</span>
-          <span className="block text-xs text-ink-muted">{t("account.viewAccount")}</span>
+          <span className="block truncate text-sm font-semibold text-ink">{accountName}</span>
+          <span className="block text-xs text-ink-muted">{profile?.phone || t("account.viewAccount")}</span>
         </span>
         <ChevronRightIcon className="h-4 w-4 text-ink-muted" />
       </Link>
@@ -138,6 +141,7 @@ export function AccountMenu() {
     getServerIsAuthenticated
   );
   const [open, setOpen] = useState(false);
+  const profile = useAccountProfile(isAuthenticated);
   const wrapRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
@@ -173,7 +177,7 @@ export function AccountMenu() {
         className="tap-target flex items-center justify-center rounded-full transition-transform hover:scale-[1.04] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
       >
         {isAuthenticated ? (
-          <Avatar name="You" size="md" mode="letter" />
+          <Avatar name={profile?.displayName || t("nav.account")} size="md" mode="letter" />
         ) : (
           <UserIcon className="h-5.5 w-5.5 text-ink-muted" />
         )}

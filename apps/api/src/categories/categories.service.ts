@@ -38,7 +38,11 @@ export class CategoriesService {
       
       return rootCategories;
     } catch (error) {
-      this.logger.error(`[ERROR] Failed to fetch categories from database - ${error instanceof Error ? error.message : 'Unknown error'}`, error instanceof Error ? error.stack : String(error));
+      const prismaError = error as { code?: unknown; meta?: unknown };
+      this.logger.error(
+        `[ERROR] Failed to fetch categories from database - code=${String(prismaError?.code ?? 'unknown')} meta=${JSON.stringify(prismaError?.meta ?? null)} message=${error instanceof Error ? error.message : 'Unknown error'}`,
+        error instanceof Error ? error.stack : String(error),
+      );
       throw new InternalServerErrorException('Unable to retrieve categories at this time. Please try again later.');
     }
   }

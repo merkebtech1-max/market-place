@@ -42,24 +42,20 @@ export function ReservationsView() {
   }, [t]);
 
   useEffect(() => {
-    void load();
+    const initialLoad = window.setTimeout(() => void load(), 0);
+    return () => window.clearTimeout(initialLoad);
   }, [load]);
-
-  useEffect(() => {
-    if (!qr) {
-      setQrImage("");
-      return;
-    }
-    void QRCode.toDataURL(qr.token, { width: 280, margin: 2, errorCorrectionLevel: "M" })
-      .then(setQrImage)
-      .catch(() => setQrImage(""));
-  }, [qr]);
 
   async function showQr(id: string) {
     setBusyId(id);
     setError("");
+    setQrImage("");
     try {
-      setQr(await getReservationQr(id));
+      const nextQr = await getReservationQr(id);
+      setQr(nextQr);
+      setQrImage(
+        await QRCode.toDataURL(nextQr.token, { width: 280, margin: 2, errorCorrectionLevel: "M" })
+      );
     } catch (qrError) {
       setError(qrError instanceof Error ? qrError.message : t("reservation.qrError"));
     } finally {
@@ -73,7 +69,10 @@ export function ReservationsView() {
     setError("");
     try {
       await cancelReservation(id);
-      if (qr?.reservationId === id) setQr(null);
+      if (qr?.reservationId === id) {
+        setQr(null);
+        setQrImage("");
+      }
       await load();
     } catch (cancelError) {
       setError(cancelError instanceof Error ? cancelError.message : t("reservation.cancelError"));

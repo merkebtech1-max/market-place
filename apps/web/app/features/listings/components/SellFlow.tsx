@@ -87,24 +87,27 @@ export function SellFlow() {
   const [published, setPublished] = useState(false);
 
   useEffect(() => {
-    try {
-      const stored = window.sessionStorage.getItem(SELL_DRAFT_STORAGE_KEY);
-      if (stored) {
-        const saved = JSON.parse(stored) as { draft?: SellDraft; step?: SellStep };
-        if (saved.draft) setDraft({ ...emptyDraft, ...saved.draft, photoPreview: null });
-        if (saved.step && STEPS.includes(saved.step)) setStep(saved.step);
-        window.sessionStorage.removeItem(SELL_DRAFT_STORAGE_KEY);
+    const restore = window.setTimeout(() => {
+      try {
+        const stored = window.localStorage.getItem(SELL_DRAFT_STORAGE_KEY);
+        if (stored) {
+          const saved = JSON.parse(stored) as { draft?: SellDraft; step?: SellStep };
+          if (saved.draft) setDraft({ ...emptyDraft, ...saved.draft, photoPreview: null });
+          if (saved.step && STEPS.includes(saved.step)) setStep(saved.step);
+        }
+        const submission = window.localStorage.getItem(SELL_SUBMISSION_STORAGE_KEY);
+        if (submission) {
+          const parsed = JSON.parse(submission) as { listingId?: string; imageUploaded?: boolean };
+          setDraftListingId(parsed.listingId ?? null);
+          setImageUploaded(parsed.imageUploaded === true);
+        }
+      } catch {
+        window.localStorage.removeItem(SELL_DRAFT_STORAGE_KEY);
+        window.localStorage.removeItem(SELL_SUBMISSION_STORAGE_KEY);
       }
-      const submission = window.sessionStorage.getItem(SELL_SUBMISSION_STORAGE_KEY);
-      if (submission) {
-        const parsed = JSON.parse(submission) as { listingId?: string; imageUploaded?: boolean };
-        setDraftListingId(parsed.listingId ?? null);
-        setImageUploaded(parsed.imageUploaded === true);
-      }
-    } catch {
-      window.sessionStorage.removeItem(SELL_DRAFT_STORAGE_KEY);
-      window.sessionStorage.removeItem(SELL_SUBMISSION_STORAGE_KEY);
-    }
+    }, 0);
+
+    return () => window.clearTimeout(restore);
   }, []);
 
   useEffect(() => {
@@ -185,7 +188,7 @@ export function SellFlow() {
       return;
     }
     if (!isAuthenticated) {
-      window.sessionStorage.setItem(
+      window.localStorage.setItem(
         SELL_DRAFT_STORAGE_KEY,
         JSON.stringify({ draft: { ...draft, photoPreview: null }, step })
       );
@@ -214,7 +217,7 @@ export function SellFlow() {
         const created = await createListingDraft(input);
         listingId = created.listingId;
         setDraftListingId(listingId);
-        window.sessionStorage.setItem(
+        window.localStorage.setItem(
           SELL_SUBMISSION_STORAGE_KEY,
           JSON.stringify({ listingId, imageUploaded: false })
         );
@@ -222,14 +225,14 @@ export function SellFlow() {
       if (!imageUploaded && photoFile) {
         await uploadListingImage(listingId, photoFile);
         setImageUploaded(true);
-        window.sessionStorage.setItem(
+        window.localStorage.setItem(
           SELL_SUBMISSION_STORAGE_KEY,
           JSON.stringify({ listingId, imageUploaded: true })
         );
       }
       await publishListing(listingId);
-      window.sessionStorage.removeItem(SELL_DRAFT_STORAGE_KEY);
-      window.sessionStorage.removeItem(SELL_SUBMISSION_STORAGE_KEY);
+      window.localStorage.removeItem(SELL_DRAFT_STORAGE_KEY);
+      window.localStorage.removeItem(SELL_SUBMISSION_STORAGE_KEY);
       setPublished(true);
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : "Unable to publish the listing.");

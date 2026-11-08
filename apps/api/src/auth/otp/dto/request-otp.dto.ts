@@ -1,6 +1,7 @@
-import { IsPhoneNumber } from 'class-validator';
+import { Matches } from 'class-validator';
+import { ETHIOPIAN_MOBILE_MESSAGE, ETHIOPIAN_MOBILE_PATTERN } from '../../dto/ethiopian-phone.js';
 
 export class RequestOtpDto {
-  @IsPhoneNumber()
+  @Matches(ETHIOPIAN_MOBILE_PATTERN, { message: ETHIOPIAN_MOBILE_MESSAGE })
   phone: string;
 }

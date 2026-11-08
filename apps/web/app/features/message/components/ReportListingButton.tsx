@@ -6,7 +6,7 @@ import { useLanguage } from "@/il8n/LanguageProvider";
 import { ReportSheet } from "./ReportSheet";
 
 /** Report entry point for the listing detail page (FR-S1). */
-export function ReportListingButton() {
+export function ReportListingButton({ listingId }: { listingId: string }) {
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   return (
@@ -14,7 +14,7 @@ export function ReportListingButton() {
       <Button variant="outline" fullWidth onClick={() => setOpen(true)}>
         {t("report.listingCta")}
       </Button>
-      <ReportSheet open={open} onOpenChange={setOpen} defaultTarget="listing" />
+      <ReportSheet open={open} onOpenChange={setOpen} defaultTarget="listing" targetIds={{ listing: listingId }} />
     </>
   );
 }

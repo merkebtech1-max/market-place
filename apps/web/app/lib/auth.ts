@@ -11,22 +11,37 @@ export interface StoredAuthSession {
   refreshToken: string;
 }
 
+function readStoredSession() {
+  const persistent = window.localStorage.getItem(AUTH_STORAGE_KEY);
+  if (persistent) return persistent;
+
+  // Preserve sessions created before authentication became persistent.
+  const legacy = window.sessionStorage.getItem(AUTH_STORAGE_KEY);
+  if (legacy) {
+    window.localStorage.setItem(AUTH_STORAGE_KEY, legacy);
+    window.sessionStorage.removeItem(AUTH_STORAGE_KEY);
+  }
+  return legacy;
+}
+
 export function saveAuthSession(response: AuthResponse) {
-  window.sessionStorage.setItem(
+  window.localStorage.setItem(
     AUTH_STORAGE_KEY,
     JSON.stringify({ userId: response.userId, ...response.tokens })
   );
+  window.sessionStorage.removeItem(AUTH_STORAGE_KEY);
   window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
 }
 
 export function clearAuthSession() {
+  window.localStorage.removeItem(AUTH_STORAGE_KEY);
   window.sessionStorage.removeItem(AUTH_STORAGE_KEY);
   window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
 }
 
 export function getAuthSession(): StoredAuthSession | null {
   try {
-    const value = window.sessionStorage.getItem(AUTH_STORAGE_KEY);
+    const value = readStoredSession();
     return value ? (JSON.parse(value) as StoredAuthSession) : null;
   } catch {
     return null;
@@ -38,7 +53,7 @@ export function getServerAuthSession(): null {
 }
 
 export function getIsAuthenticated() {
-  return Boolean(window.sessionStorage.getItem(AUTH_STORAGE_KEY));
+  return Boolean(readStoredSession());
 }
 
 export function getServerIsAuthenticated() {

@@ -1,8 +1,9 @@
-import { IsNotEmpty, IsOptional, IsPhoneNumber, IsString, IsUUID, Length } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, IsUUID, Length, Matches } from 'class-validator';
+import { ETHIOPIAN_MOBILE_MESSAGE, ETHIOPIAN_MOBILE_PATTERN } from './ethiopian-phone.js';
 
 /** DTO for the register endpoint — OTP-verified phone + user profile fields */
 export class RegisterDto {
-  @IsPhoneNumber()
+  @Matches(ETHIOPIAN_MOBILE_PATTERN, { message: ETHIOPIAN_MOBILE_MESSAGE })
   phone: string;
 
   @IsString()

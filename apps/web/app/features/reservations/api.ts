@@ -20,14 +20,37 @@ export type Reservation = {
   };
 };
 
-export async function createReservation(listingId: string, threadId: string) {
-  const response = await authenticatedApiRequest<{ success: true; data: { id: string } }>(
-    "/transactions/reservations",
+export type ReservationPaymentCheckout = {
+  paymentId: string;
+  checkoutUrl: string;
+  txRef: string;
+  expiresAt: string;
+  baseAmount: number;
+  totalAmount: number;
+  currency: string;
+};
+
+export type ReservationPaymentStatus = {
+  status: "PENDING" | "VERIFIED" | "FAILED" | "REFUNDED" | "PARTIALLY_REFUNDED";
+  reservationId: string | null;
+};
+
+export async function initializeReservationPayment(listingId: string, threadId: string) {
+  const response = await authenticatedApiRequest<{ success: true; data: ReservationPaymentCheckout }>(
+    "/transactions/reservations/payment/initialize",
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ listingId, threadId }),
     }
+  );
+  return response.data;
+}
+
+export async function getReservationPaymentStatus(paymentId: string) {
+  const response = await authenticatedApiRequest<{ success: true; data: ReservationPaymentStatus }>(
+    `/transactions/reservations/payment/${paymentId}/status`,
+    { cache: "no-store" }
   );
   return response.data;
 }
