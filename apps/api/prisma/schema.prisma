@@ -475,6 +475,7 @@ enum CompletionMethod {
 enum PaymentProvider {
   CHAPA
   TELEBIRR
+  MELAPAYS
 }
 
 enum PaymentStatus {

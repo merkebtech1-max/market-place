@@ -43,7 +43,9 @@ export function SellerListings() {
 
   const [data, setData] = useState<{ items: SellerListing[]; counts: SellerCounts } | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [publishingId, setPublishingId] = useState<string | null>(null);
 
   const load = useCallback(() => getMyListings(tab).then(setData), [tab]);
 
@@ -58,9 +60,18 @@ export function SellerListings() {
   };
 
   const publish = async (l: SellerListing) => {
-    await publishDraft(l.id);
-    setNotice(t("dashboard.publishedDone", { title: l.title }));
-    await load();
+    setPublishingId(l.id);
+    setNotice(null);
+    setError(null);
+    try {
+      await publishDraft(l.id);
+      setNotice(t("dashboard.publishedDone", { title: l.title }));
+      await load();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Unable to publish this listing.");
+    } finally {
+      setPublishingId(null);
+    }
   };
 
   const removeDraft = async (listing: SellerListing) => {
@@ -120,6 +131,11 @@ export function SellerListings() {
           {notice}
         </p>
       )}
+      {error && (
+        <p role="alert" className="mb-3 rounded-control bg-danger-soft px-3 py-2 text-sm text-danger">
+          {error}
+        </p>
+      )}
 
       {!data ? (
         <div className="space-y-3">
@@ -177,9 +193,15 @@ export function SellerListings() {
                     )}
                     {l.status === "draft" && (
                       <>
-                        <Button size="sm" onClick={() => publish(l)}>
-                          {t("dashboard.publish")}
-                        </Button>
+                        {l.images.length === 0 ? (
+                          <ButtonLink href={`/dashboard/listings/${l.id}/edit`} size="sm">
+                            Add photo
+                          </ButtonLink>
+                        ) : (
+                          <Button size="sm" disabled={publishingId === l.id} onClick={() => publish(l)}>
+                            {t("dashboard.publish")}
+                          </Button>
+                        )}
                         <Button
                           size="sm"
                           variant="outline"

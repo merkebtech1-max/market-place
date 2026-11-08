@@ -11,6 +11,10 @@ export interface ChatMessage {
   offerStatus?: OfferStatus;
   /** Previous amount in the negotiation, shown as price history. */
   previousCents?: number;
+  /** Persisted offer event links used to restore status after reload. */
+  offerReplacesId?: string;
+  offerTargetId?: string;
+  offerResponseStatus?: "accepted" | "declined";
   /** Meetup proposal (FR-T4): place is `body`, time is `when`. */
   when?: string;
   meetupStatus?: "proposed" | "accepted";

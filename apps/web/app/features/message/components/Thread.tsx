@@ -12,9 +12,9 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { useLanguage } from "@/il8n/LanguageProvider";
 import { cn, formatETB } from "@/lib/utils";
 import { getConversation } from "../queries";
-import { apiMessageToChat } from "../queries";
+import { apiMessageToChat, encodeOfferMessage, encodeOfferResponse } from "../queries";
 import { blockUser, getBlockedUsers, markThreadRead, sendThreadMessage, unblockUser } from "../action";
-import { createReservation } from "@/features/reservations/api";
+import { completeReservationCheckout } from "@/features/reservations/checkout";
 import type { ChatMessage, Conversation } from "../types";
 
 import { MeetupSheet } from "./MeetupSheet";
@@ -94,7 +94,7 @@ export function Thread({ id }: { id: string }) {
     setReserving(true);
     setMessageError("");
     try {
-      await createReservation(convo.listingId, convo.id);
+      await completeReservationCheckout(convo.listingId, convo.id);
       router.push("/reservations");
     } catch (error) {
       setMessageError(error instanceof Error ? error.message : t("reservation.createError"));
@@ -119,37 +119,49 @@ export function Thread({ id }: { id: string }) {
   };
 
   /** Sends a new offer, or a counter that supersedes the pending one. */
-  const sendOffer = (cents: number) =>
-    setMessages((m) => {
-      const target = sheet?.replaces;
-      const prev = m.find((x) => x.id === target);
-      const next = m.map((x) => (x.id === target ? { ...x, offerStatus: "countered" as const } : x));
-      next.push({
-        id: `o${m.length}`,
-        mine: true,
-        kind: "offer",
-        offerCents: cents,
-        offerStatus: "pending",
-        previousCents: prev?.offerCents,
-        sentAt: new Date().toISOString(),
+  const sendOffer = async (cents: number) => {
+    if (!convo || sending || blocked) return;
+    const target = sheet?.replaces;
+    const previousCents = messages.find((message) => message.id === target)?.offerCents;
+    setSending(true);
+    setMessageError("");
+    try {
+      const created = await sendThreadMessage(
+        convo.id,
+        encodeOfferMessage(cents, previousCents, target),
+      );
+      setMessages((current) => {
+        const next = current.map((message) =>
+          message.id === target ? { ...message, offerStatus: "countered" as const } : message,
+        );
+        next.push(apiMessageToChat(created));
+        return next;
       });
-      return next;
-    });
+    } catch (error) {
+      setMessageError(error instanceof Error ? error.message : "Unable to send offer.");
+    } finally {
+      setSending(false);
+    }
+  };
 
-  const respond = (msgId: string, status: "accepted" | "declined") =>
-    setMessages((m) => {
-      const next = m.map((x) => (x.id === msgId ? { ...x, offerStatus: status } : x));
-      if (status === "accepted") {
-        next.push({
-          id: `s${m.length}`,
-          mine: false,
-          kind: "system",
-          body: t("chat.reserved"),
-          sentAt: new Date().toISOString(),
-        });
-      }
-      return next;
-    });
+  const respond = async (msgId: string, status: "accepted" | "declined") => {
+    if (!convo || sending || blocked) return;
+    setSending(true);
+    setMessageError("");
+    try {
+      const created = await sendThreadMessage(convo.id, encodeOfferResponse(msgId, status));
+      setMessages((current) => [
+        ...current.map((message) =>
+          message.id === msgId ? { ...message, offerStatus: status } : message,
+        ),
+        apiMessageToChat(created),
+      ]);
+    } catch (error) {
+      setMessageError(error instanceof Error ? error.message : "Unable to respond to offer.");
+    } finally {
+      setSending(false);
+    }
+  };
 
   if (convo === undefined) {
     return (

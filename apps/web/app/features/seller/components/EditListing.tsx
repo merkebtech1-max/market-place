@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Container } from "@/components/layout/Container";
 import { Button } from "@/components/ui/Button";
@@ -8,6 +9,11 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Input } from "@/components/ui/Input";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useLanguage } from "@/il8n/LanguageProvider";
+import {
+  deleteListingImage,
+  reorderListingImages,
+  uploadListingImage,
+} from "@/features/listings/api";
 import { updateMyListing } from "../actions";
 import { getMyListing } from "../queries";
 import type { SellerListing } from "../types";
@@ -31,6 +37,9 @@ export function EditListing({ id }: { id: string }) {
   const [swap, setSwap] = useState(false);
   const [errors, setErrors] = useState<{ title?: string; price?: string }>({});
   const [saving, setSaving] = useState(false);
+  const [photos, setPhotos] = useState<File[]>([]);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [imageBusy, setImageBusy] = useState<string | null>(null);
 
   useEffect(() => {
     getMyListing(id).then((l) => {
@@ -78,11 +87,58 @@ export function EditListing({ id }: { id: string }) {
     setErrors(next);
     if (next.title || next.price) return;
     setSaving(true);
+    setSaveError(null);
     try {
       await updateMyListing(id, { title, description, priceCents: cents, isNegotiable: negotiable, acceptsSwap: swap });
+      for (const photo of photos) await uploadListingImage(id, photo);
       router.push("/dashboard/listings");
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : "Unable to save the listing.");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const removeImage = async (imageId: string) => {
+    if (!listing || listing.images.length <= 1) {
+      setSaveError(t("dashboard.cannotRemoveLastPhoto"));
+      return;
+    }
+    if (!window.confirm(t("dashboard.removePhotoConfirm"))) return;
+    setImageBusy(imageId);
+    setSaveError(null);
+    try {
+      await deleteListingImage(id, imageId);
+      setListing({
+        ...listing,
+        images: listing.images.filter((image) => image.id !== imageId),
+      });
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : t("dashboard.photoActionError"));
+    } finally {
+      setImageBusy(null);
+    }
+  };
+
+  const moveImage = async (index: number, direction: -1 | 1) => {
+    if (!listing) return;
+    const nextIndex = index + direction;
+    if (nextIndex < 0 || nextIndex >= listing.images.length) return;
+    const reordered = [...listing.images];
+    const currentImage = reordered[index];
+    const adjacentImage = reordered[nextIndex];
+    if (!currentImage || !adjacentImage) return;
+    reordered[index] = adjacentImage;
+    reordered[nextIndex] = currentImage;
+    setImageBusy(currentImage.id);
+    setSaveError(null);
+    try {
+      await reorderListingImages(id, reordered.map((image) => image.id));
+      setListing({ ...listing, images: reordered });
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : t("dashboard.photoActionError"));
+    } finally {
+      setImageBusy(null);
     }
   };
 
@@ -117,6 +173,84 @@ export function EditListing({ id }: { id: string }) {
           <input type="checkbox" checked={swap} onChange={(e) => setSwap(e.target.checked)} className="h-5 w-5 accent-primary" />
           {t("common.openToSwap")}
         </label>
+        {listing.status === "draft" && (
+          <section aria-labelledby="listing-photos" className="space-y-3">
+            <h2 id="listing-photos" className="text-sm font-medium text-ink">
+              {t("dashboard.photos")}
+            </h2>
+            {listing.images.length > 0 && (
+              <ol className="space-y-2">
+                {listing.images.map((image, index) => (
+                  <li key={image.id} className="flex items-center gap-3 rounded-control border border-border p-2">
+                    <Image
+                      src={image.url}
+                      alt=""
+                      width={72}
+                      height={72}
+                      className="h-16 w-16 shrink-0 rounded-control object-cover"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-medium text-ink">
+                        {index === 0 ? t("dashboard.coverPhoto") : `#${index + 1}`}
+                      </p>
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          disabled={index === 0 || imageBusy !== null}
+                          onClick={() => moveImage(index, -1)}
+                        >
+                          {t("dashboard.moveEarlier")}
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          disabled={index === listing.images.length - 1 || imageBusy !== null}
+                          onClick={() => moveImage(index, 1)}
+                        >
+                          {t("dashboard.moveLater")}
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          disabled={listing.images.length <= 1 || imageBusy !== null}
+                          onClick={() => removeImage(image.id)}
+                        >
+                          {t("dashboard.removePhoto")}
+                        </Button>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            )}
+            <label className="block text-sm font-medium text-ink">
+              {t("dashboard.addPhoto")}
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                multiple
+                disabled={listing.images.length >= 5}
+                onChange={(event) => {
+                  const available = 5 - listing.images.length;
+                  setPhotos(Array.from(event.target.files ?? []).slice(0, available));
+                }}
+                className="mt-1.5 block w-full rounded-control border border-border bg-surface p-2 text-sm font-normal file:mr-3 file:rounded-control file:border-0 file:bg-primary-soft file:px-3 file:py-2 file:text-primary"
+              />
+              <span className="mt-1 block text-xs font-normal text-ink-muted">
+                {t(listing.images.length >= 5 ? "dashboard.photoLimit" : "dashboard.addPhotoHelp")}
+              </span>
+            </label>
+          </section>
+        )}
+        {saveError && (
+          <p role="alert" className="rounded-control bg-danger-soft px-3 py-2 text-sm text-danger">
+            {saveError}
+          </p>
+        )}
         <div className="flex flex-col gap-2 xs:flex-row">
           <Button type="button" variant="outline" className="flex-1" onClick={() => router.push("/dashboard/listings")}>
             {t("chat.cancel")}

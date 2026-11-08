@@ -77,8 +77,9 @@ function assetUrl(storageKey: string | null | undefined): string {
   if (storageKey.startsWith("http://") || storageKey.startsWith("https://") || storageKey.startsWith("/")) {
     return storageKey;
   }
-  const base = process.env.NEXT_PUBLIC_STORAGE_BASE_URL?.replace(/\/$/, "");
-  return base ? `${base}/${storageKey}` : "/image/logo.jpg";
+  const apiBase = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api").replace(/\/$/, "");
+  const base = process.env.NEXT_PUBLIC_STORAGE_BASE_URL?.replace(/\/$/, "") ?? `${apiBase}/storage`;
+  return `${base}/${storageKey}`;
 }
 
 function condition(value: string): ListingCondition {
@@ -238,6 +239,20 @@ export async function uploadListingImage(id: string, file: File) {
   const body = new FormData();
   body.append("file", file);
   return authenticatedApiRequest(`/listings/${id}/images`, { method: "POST", body });
+}
+
+export async function deleteListingImage(listingId: string, imageId: string) {
+  return authenticatedApiRequest(`/listings/${listingId}/images/${imageId}`, {
+    method: "DELETE",
+  });
+}
+
+export async function reorderListingImages(listingId: string, imageIds: string[]) {
+  return authenticatedApiRequest(`/listings/${listingId}/images/reorder`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ imageIds }),
+  });
 }
 
 export async function publishListing(id: string) {

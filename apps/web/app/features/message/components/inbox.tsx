@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Container } from "@/components/layout/Container";
@@ -8,7 +8,13 @@ import { Avatar } from "@/components/ui/Avatar";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { InboxIcon } from "@/components/ui/Icon";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { ButtonLink } from "@/components/ui/Button";
 import { useLanguage } from "@/il8n/LanguageProvider";
+import {
+  getIsAuthenticated,
+  getServerIsAuthenticated,
+  subscribeAuthSession,
+} from "@/lib/auth";
 import { cn, formatRelativeTime } from "@/lib/utils";
 import { getConversation, getConversations } from "../queries";
 import type { Conversation } from "../types";
@@ -17,22 +23,65 @@ type Tab = "all" | "buying" | "selling";
 
 export function Inbox() {
   const { t, locale } = useLanguage();
+  const isAuthenticated = useSyncExternalStore(
+    subscribeAuthSession,
+    getIsAuthenticated,
+    getServerIsAuthenticated
+  );
   const [items, setItems] = useState<Conversation[] | null>(null);
+  const [loadError, setLoadError] = useState("");
   const [tab, setTab] = useState<Tab>("all");
   const listingId = useSearchParams().get("listing");
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      return;
+    }
+
+    let cancelled = false;
     // "Message seller" from a listing: show the inbox with that chat ready at the top.
-    Promise.all([getConversations(), listingId ? getConversation(`l-${listingId}`) : null]).then(
-      ([all, started]) => setItems(started ? [started, ...all.filter((item) => item.id !== started.id)] : all)
-    );
-  }, [listingId]);
+    void Promise.all([getConversations(), listingId ? getConversation(`l-${listingId}`) : null])
+      .then(([all, started]) => {
+        if (!cancelled) {
+          setItems(started ? [started, ...all.filter((item) => item.id !== started.id)] : all);
+        }
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) {
+          setItems([]);
+          setLoadError(error instanceof Error ? error.message : t("chat.loadError"));
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, listingId, t]);
 
   const shown = items?.filter((c) => tab === "all" || c.role === tab);
+
+  if (!isAuthenticated) {
+    const next = listingId ? `/messages?listing=${encodeURIComponent(listingId)}` : "/messages";
+    return (
+      <Container className="max-w-md px-3 py-10">
+        <EmptyState
+          icon={<InboxIcon />}
+          title={t("chat.signInTitle")}
+          body={t("chat.signInBody")}
+          action={
+            <ButtonLink href={`/sign-in?mode=login&next=${encodeURIComponent(next)}`}>
+              {t("header.signIn")}
+            </ButtonLink>
+          }
+        />
+      </Container>
+    );
+  }
 
   return (
     <Container className="max-w-2xl px-3 py-4 sm:py-8">
       <h1 className="mb-3 text-xl font-bold text-ink">{t("chat.title")}</h1>
+      {loadError && <p role="alert" className="mb-3 rounded-control bg-danger/10 px-3 py-2 text-sm text-danger">{loadError}</p>}
       <div role="tablist" aria-label={t("chat.title")} className="mb-3 flex gap-2">
         {(["all", "buying", "selling"] as const).map((k) => (
           <button

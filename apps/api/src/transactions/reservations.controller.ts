@@ -1,4 +1,6 @@
-import { BadRequestException, Body, Controller, Get, Logger, Param, Post, Query, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Headers, HttpCode, HttpStatus, Logger, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
+import type { RawBodyRequest } from '@nestjs/common';
+import type { Request } from 'express';
 import { AuthGuard } from '@nestjs/passport';
 import { CurrentUser } from '../auth/decorators/current-user.decorator.js';
 import type { TokenPayload } from '../auth/jwt/jwt-token.service.js';
@@ -21,6 +23,11 @@ import {
   type ReservationQrResponse,
 } from './services/reservation-qr.service.js';
 import { ReservationStatus } from '../generated/prisma/enums.js';
+import {
+  ReservationPaymentService,
+  type ReservationPaymentCheckout,
+  type ReservationPaymentStatus,
+} from './services/reservation-payment.service.js';
 
 @Controller('transactions/reservations')
 export class ReservationsController {
@@ -31,7 +38,39 @@ export class ReservationsController {
     private readonly reservationLifecycleService: ReservationLifecycleService,
     private readonly reservationListService: ReservationListService,
     private readonly reservationQrService: ReservationQrService,
+    private readonly reservationPaymentService: ReservationPaymentService,
   ) {}
+
+  @Post('payment/initialize')
+  @UseGuards(AuthGuard('jwt'))
+  async initializeReservationPayment(
+    @Body() dto: CreateReservationDto,
+    @CurrentUser() user: TokenPayload,
+  ): Promise<{ success: true; data: ReservationPaymentCheckout }> {
+    const data = await this.reservationPaymentService.initialize(user.sub, dto.listingId, dto.threadId);
+    return { success: true, data };
+  }
+
+  @Post('payment/melapays/callback')
+  @HttpCode(HttpStatus.OK)
+  async captureMelaPaysCallback(
+    @Body() payload: Record<string, unknown>,
+    @Headers() headers: Record<string, string | string[] | undefined>,
+    @Req() request: RawBodyRequest<Request>,
+  ): Promise<{ received: true }> {
+    await this.reservationPaymentService.handleMelaPaysCallback(payload, headers, request.rawBody);
+    return { received: true };
+  }
+
+  @Get('payment/:paymentId/status')
+  @UseGuards(AuthGuard('jwt'))
+  async getReservationPaymentStatus(
+    @Param('paymentId') paymentId: string,
+    @CurrentUser() user: TokenPayload,
+  ): Promise<{ success: true; data: ReservationPaymentStatus }> {
+    const data = await this.reservationPaymentService.getStatus(user.sub, paymentId);
+    return { success: true, data };
+  }
 
   @Get('my')
   @UseGuards(AuthGuard('jwt'))

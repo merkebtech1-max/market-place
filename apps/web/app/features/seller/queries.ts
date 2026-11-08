@@ -28,8 +28,9 @@ function imageUrl(storageKey: string): string {
   if (storageKey.startsWith("http://") || storageKey.startsWith("https://") || storageKey.startsWith("/")) {
     return storageKey;
   }
-  const base = process.env.NEXT_PUBLIC_STORAGE_BASE_URL?.replace(/\/$/, "");
-  return base ? `${base}/${storageKey}` : "/image/logo.jpg";
+  const apiBase = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api").replace(/\/$/, "");
+  const base = process.env.NEXT_PUBLIC_STORAGE_BASE_URL?.replace(/\/$/, "") ?? `${apiBase}/storage`;
+  return `${base}/${storageKey}`;
 }
 
 function toSellerListing(value: ApiSellerListing): SellerListing {

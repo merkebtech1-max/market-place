@@ -8,10 +8,16 @@ import {
 
 @Injectable()
 export class CloudflareR2Service {
-  private readonly client: S3Client;
+  private readonly client: S3Client | null;
   private readonly bucket: string;
 
   constructor(private readonly config: ConfigService) {
+    const defaultProvider = this.config.get<string>('NODE_ENV', 'development') === 'production' ? 'r2' : 'local';
+    if (this.config.get<string>('STORAGE_PROVIDER', defaultProvider) === 'local') {
+      this.client = null;
+      this.bucket = '';
+      return;
+    }
     const endpoint = this.config.getOrThrow<string>('R2_ENDPOINT');
     const accessKeyId = this.config.getOrThrow<string>('R2_ACCESS_KEY_ID');
     const secretAccessKey = this.config.getOrThrow<string>('R2_SECRET_ACCESS_KEY');
@@ -34,6 +40,7 @@ export class CloudflareR2Service {
     buffer: Buffer,
     contentType: string,
   ): Promise<void> {
+    if (!this.client) throw new InternalServerErrorException('R2 storage is not configured.');
     try {
       await this.client.send(
         new PutObjectCommand({
@@ -49,6 +56,7 @@ export class CloudflareR2Service {
   }
 
   async delete(storageKey: string): Promise<void> {
+    if (!this.client) throw new InternalServerErrorException('R2 storage is not configured.');
     try {
       await this.client.send(
         new DeleteObjectCommand({

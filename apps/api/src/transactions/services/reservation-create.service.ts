@@ -160,11 +160,70 @@ export class ReservationCreateService {
             createdAt: existingReservation.createdAt,
           };
         }
-        // Reservation exists in a terminal state (COMPLETED, CANCELLED, etc.)
-        // For now, treat as conflict — we'll decide later if a new reservation
-        // can be created for the same thread
+
+        if (existingReservation.status === ReservationStatus.CANCELLED) {
+          const durationHours = getReservationDurationHours(this.config);
+          const expiresAt = new Date(now.getTime() + durationHours * 60 * 60 * 1000);
+          const reactivated = await this.prisma.$transaction(async (tx) => {
+            const listingUpdate = await tx.listing.updateMany({
+              where: {
+                id: listingId,
+                status: ListingStatus.ACTIVE,
+                expiresAt: { gt: now },
+              },
+              data: { status: ListingStatus.RESERVED },
+            });
+
+            if (listingUpdate.count === 0) {
+              throw new ConflictException(
+                'This listing was just reserved by someone else. Please try another listing.',
+              );
+            }
+
+            const reservationUpdate = await tx.reservation.updateMany({
+              where: {
+                id: existingReservation.id,
+                status: ReservationStatus.CANCELLED,
+              },
+              data: {
+                status: ReservationStatus.RESERVED,
+                expiresAt,
+                qrTokenHash: null,
+                qrConsumedAt: null,
+                completedAt: null,
+                completionMethod: null,
+              },
+            });
+
+            if (reservationUpdate.count === 0) {
+              throw new ConflictException(
+                'This reservation was just modified by another operation. Please refresh and try again.',
+              );
+            }
+
+            return tx.reservation.findUniqueOrThrow({
+              where: { id: existingReservation.id },
+              select: {
+                id: true,
+                listingId: true,
+                buyerId: true,
+                sellerId: true,
+                status: true,
+                expiresAt: true,
+                createdAt: true,
+              },
+            });
+          });
+
+          this.logger.log(
+            `[SUCCESS] Cancelled reservation reactivated: reservationId=${reactivated.id}, threadId=${threadId}`,
+          );
+          return reactivated;
+        }
+
+        // Completed, disputed, and refunded reservations remain terminal.
         throw new ConflictException(
-          'This conversation already has a reservation that is no longer active.',
+          `This conversation already has a ${existingReservation.status.toLowerCase()} reservation and cannot be reserved again.`,
         );
       }
 

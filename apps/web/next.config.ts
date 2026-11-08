@@ -2,6 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
+    // Development listing images are served by the local Nest API. Keep
+    // private-IP optimization disabled in production to preserve SSRF protection.
+    dangerouslyAllowLocalIP: process.env.NODE_ENV !== "production",
     // Placeholder listing photos in mock data only — swap for the R2 asset
     // domain once the media module (SRS §8.1) is wired up.
     remotePatterns: [
@@ -12,6 +15,12 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "i.pravatar.cc",
+      },
+      {
+        protocol: "http",
+        hostname: "localhost",
+        port: "3001",
+        pathname: "/api/storage/**",
       },
     ],
     formats: ["image/avif", "image/webp"],
