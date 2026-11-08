@@ -37,8 +37,9 @@ async function bootstrap() {
     next();
   });
 
-  await app.listen(port);
-  logger.log(`Application is running on: http://localhost:${port}`);
+  const host = '0.0.0.0';
+  await app.listen(port, host);
+  logger.log(`Application is running on: http://${host}:${port}`);
 }
 
 await bootstrap();
